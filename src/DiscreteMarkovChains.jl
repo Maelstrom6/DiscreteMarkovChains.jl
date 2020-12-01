@@ -6,7 +6,8 @@ export DiscreteMarkovChain, state_space, transition_matrix,
 communication_classes, periodicities, decompose, canonical_form,
 is_regular, is_ergodic, is_absorbing,
 stationary_distribution, fundamental_matrix, 
-expected_time_to_absorption, exit_probabilities, first_passage_probabilities
+expected_time_to_absorption, exit_probabilities, first_passage_probabilities,
+mean_recurrence_time, mean_first_passage_time
 
 abstract type AbstractMarkovChain end
 abstract type AbstractDiscreteMarkovChain <: AbstractMarkovChain end
@@ -310,7 +311,7 @@ function stationary_distribution(x::AbstractMarkovChain)
     n = length(state_space(x))
 
     if n == 0
-        return Array{Any}(undef, 0, 0)
+        return Any[]
     end
 
     a = (T - LinearAlgebra.I)'
@@ -345,6 +346,9 @@ end
 
 """
     expected_time_to_absorption(x)
+
+The expected number of steps that the process will take while in 
+the transient super class given that the process started in state i.
 
 # Parameters
 - `x`: some kind of Markov chain.
@@ -471,6 +475,61 @@ function first_passage_probabilities(
         return Ft[i, j]
     end
     return Ft
+end
+
+"""
+    mean_recurrence_time(x)
+
+This is the expected number of steps for the process to 
+return to state i given that the process started in state i.
+
+# Parameters
+- `x`: some kind of Markov chain.
+
+# Returns
+A 1D array where the ith entry is the mean recurrence time of state i.
+
+# Note
+`x` must be irreducible (i.e. ergodic).
+"""
+function mean_recurrence_time(x::AbstractMarkovChain)
+    return 1 ./ stationary_distribution(x)
+end
+
+"""
+    mean_first_passage_time(x)
+
+This is the expected number of steps for the process to 
+reach state j given that the process started in state i.
+
+# Parameters
+- `x`: some kind of Markov chain.
+
+# Returns
+A matrix where the i,jth entry is the mean recurrence time of state i. 
+Diagonal elements are 0. 
+The diagonals would have represented the mean recurrence time.
+"""
+function mean_first_passage_time(x::AbstractMarkovChain)
+    # println(mean_recurrence_time(x))
+    # D = LinearAlgebra.diagm(mean_recurrence_time(x))
+    # T = transition_matrix(x)
+    # C = ones(eltype(D), size(D)[1], size(D)[2])
+    # M = (LinearAlgebra.I-T)\(C-D)
+
+    n = length(state_space(x))
+    T = transition_matrix(x)
+
+    if n == 0
+        return T
+    end
+
+    W = repeat(stationary_distribution(x)', n)
+    Z = LinearAlgebra.inv(LinearAlgebra.I - T + W)
+    Zjj = repeat(LinearAlgebra.diag(Z)', n)
+
+    M = (Zjj .- Z) ./ W
+    return M
 end
 
 # https://cran.r-project.org/web/packages/markovchain/vignettes/an_introduction_to_markovchain_package.pdf

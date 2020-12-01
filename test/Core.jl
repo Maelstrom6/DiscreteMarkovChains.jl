@@ -169,7 +169,7 @@ end
     # empty test
     T = Array{Any}(undef, 0, 0)
     X = DiscreteMarkovChain([], T)
-    @test stationary_distribution(X) == Array{Any}(undef, 0, 0)
+    @test stationary_distribution(X) == Any[]
 
     T = [
         1//5 2//5 2//5;
@@ -178,6 +178,16 @@ end
     ]
     X = DiscreteMarkovChain(1:3, T)
     @test stationary_distribution(X) == [11//39, 16//39, 4//13]
+
+    T = [
+        0 1 0 0 0;
+        .25 0 .75 0 0;
+        0 .5 0 .5 0;
+        0 0 .75 0 .25;
+        0 0 0 1 0;
+    ]
+    X = DiscreteMarkovChain(0:4, T)
+    @test stationary_distribution(X) ≈ [.0625, .2500, .3750, .2500, .0625]
 end
 
 @testset "Fundamental Matrix" begin
@@ -280,7 +290,7 @@ end
     ]
     X = DiscreteMarkovChain(["A", "B", "C"], T)
     @test first_passage_probabilities(X, 1) == T
-    
+
     @test first_passage_probabilities(X, 1, "A", "C") == 4//10
     @test first_passage_probabilities(X, 2, "A", "C") == 24//100
     @test first_passage_probabilities(X, 3, "A", "C") == 144//1000
@@ -290,4 +300,58 @@ end
     @test first_passage_probabilities(X, 2, "A", "A") == 32//100
     @test first_passage_probabilities(X, 3, "A", "A") == 184//1000
     @test first_passage_probabilities(X, 4, "A", "A") == 1152//10000
+end
+
+@testset "Mean Recurrence Time" begin
+    # empty test
+    T = Array{Any}(undef, 0, 0)
+    X = DiscreteMarkovChain([], T)
+    @test mean_recurrence_time(X) == Any[]
+
+    T = [
+        0 1 0 0 0;
+        .25 0 .75 0 0;
+        0 .5 0 .5 0;
+        0 0 .75 0 .25;
+        0 0 0 1 0;
+    ]
+    X = DiscreteMarkovChain(0:4, T)
+    @test mean_recurrence_time(X) ≈ [16.0000, 4.0000, 8/3, 4.0000, 16.000]
+end
+
+@testset "Mean First Passage Time" begin
+    # empty test
+    T = Array{Any}(undef, 0, 0)
+    X = DiscreteMarkovChain([], T)
+    @test mean_first_passage_time(X) == Array{Any}(undef, 0, 0)
+
+    T = [
+        1//2 1//4 1//4;
+        1//2 0 1//2;
+        1//4 1//4 1//2;
+    ]
+    X = DiscreteMarkovChain(["A", "B", "C"], T)
+    desired_new_matrix = [
+        0 4 10//3;
+        8//3 0 8//3;
+        10//3 4 0;
+    ]
+    @test mean_first_passage_time(X) == desired_new_matrix
+
+    T = [
+        0 1 0 0 0;
+        .25 0 .75 0 0;
+        0 .5 0 .5 0;
+        0 0 .75 0 .25;
+        0 0 0 1 0;
+    ]
+    X = DiscreteMarkovChain(0:4, T)
+    desired_new_matrix = [
+        0 1 8/3 19/3 64/3;
+        15 0 5/3 16/3 61/3;
+        56/3 11/3 0 11/3 56/3;
+        61/3 16/3 5/3 0 15;
+        64/3 19/3 8/3 1 0;
+    ]
+    @test mean_first_passage_time(X) ≈ desired_new_matrix
 end
