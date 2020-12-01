@@ -13,6 +13,8 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "introduction.md",
+        "functions.md",
     ],
 )
 

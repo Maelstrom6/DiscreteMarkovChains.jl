@@ -55,6 +55,9 @@ state_space(x::AbstractMarkovChain) = x.state_space
 """
     transition_matrix(x)
 
+# Parameters
+- `x`: some kind of Markov chain.
+
 # Returns
 The transition matrix of a Markov chain.
 """
@@ -67,9 +70,12 @@ transition_matrix(x::AbstractMarkovChain) = x.transition_matrix
 - `x`: some kind of Markov chain.
 
 # Returns 
-A dictionary mapping each state in a Markov chain to its position in the state space. It is essentially the inverse of state_space(x).
+A dictionary mapping each state in a Markov chain to its position in the state space. 
+It is essentially the inverse of state_space(x).
 """
-state_index(x::AbstractMarkovChain) = Dict(state => index for (index, state) in enumerate(state_space(x)))
+state_index(x::AbstractMarkovChain) = Dict(
+    state => index for (index, state) in enumerate(state_space(x))
+)
 Base.length(x::AbstractMarkovChain) = length(state_space(x))
 
 function digraph(x::AbstractMarkovChain)
@@ -104,7 +110,8 @@ end
 # Returns
 A tuple containing 2 arrays. 
 - This first array contains C arrays which store the states that communicate. 
-- The second array is an array of Bool where the ith value is true if the ith communication class is recurrent. 
+- The second array is an array of Bool where the ith value is true if the 
+  ith communication class is recurrent. 
 """
 function communication_classes(x::AbstractMarkovChain)
     S = state_space(x)
@@ -138,7 +145,8 @@ designed for discrete Markov chains. It is the same as
 # Returns
 A tuple containing 3 arrays. 
 - This first array contains C arrays which store the states that communicate. 
-- The second array is an array of Bool where the ith value is true if the ith communication class is recurrent. 
+- The second array is an array of Bool where the ith value is true if the 
+  ith communication class is recurrent. 
 - The third array is the periodicity of each communication class.
 """
 function periodicities(x::AbstractDiscreteMarkovChain)
@@ -185,9 +193,18 @@ function decompose(x::AbstractMarkovChain)
     states = vcat(r_states, t_states)
     indexes = [state_index(x)[state] for state in states]
 
-    A = [T[indexes[i], indexes[j]] for i in 1:length(r_states), j in 1:length(r_states)]
-    B = [T[indexes[length(r_states)+i], indexes[j]] for i in 1:length(t_states), j in 1:length(r_states)]
-    C = [T[indexes[length(r_states)+i], indexes[length(r_states)+j]] for i in 1:length(t_states), j in 1:length(t_states)]
+    A = [
+        T[indexes[i], indexes[j]] 
+        for i in 1:length(r_states), j in 1:length(r_states)
+    ]
+    B = [
+        T[indexes[length(r_states)+i], indexes[j]] 
+        for i in 1:length(t_states), j in 1:length(r_states)
+    ]
+    C = [
+        T[indexes[length(r_states)+i], indexes[length(r_states)+j]] 
+        for i in 1:length(t_states), j in 1:length(t_states)
+    ]
 
     return states, A, B, C
 end
@@ -195,7 +212,11 @@ end
 """
     canonical_form(x)
 
-Reorders the states of the transition matrix of `x` so that we have recurrent states first and transient states last.
+Reorders the states of the transition matrix of `x` so that 
+recurrent states appear first and transient states appear last.
+
+# Parameters
+- `x`: some kind of Markov chain.
 
 # Returns
 A tuple with the new states and the new transition matrix.
@@ -205,13 +226,16 @@ function canonical_form(x::AbstractMarkovChain)
     O = zeros(Int, size(A)[1], size(C)[2])
     result = vcat(
         hcat(A, O),
-        hcat(B, C)
+        hcat(B, C),
     )
     return states, result
 end
 
 """
     is_regular(x)
+
+# Parameters
+- `x`: some kind of Markov chain.
 
 # Returns
 `true` if the Markov chain, `x`, is regular.
@@ -227,6 +251,9 @@ end
 """
     is_ergodic(x)
 
+# Parameters
+- `x`: some kind of Markov chain.
+
 # Returns
 `true` if the Markov chain, `x`, is ergodic.
 This is, if every state can be accessed from every other state.
@@ -240,6 +267,9 @@ end
 """
     is_absorbing(x)
 
+# Parameters
+- `x`: some kind of Markov chain.
+
 # Returns
 `true` if the Markov chain, `x`, is an absorbing chain.
 So the process is guarenteed to be absorbed eventually.
@@ -252,6 +282,9 @@ end
 
 """
     stationary_distribution(x)
+
+# Parameters
+- `x`: some kind of Markov chain.
 
 # Returns
 A column vector, `w`, that satisfies the equation ``w'T = w``.
@@ -271,11 +304,39 @@ function stationary_distribution(x::AbstractMarkovChain)
     return a\b
 end
 
+"""
+    fundamental_matrix(x)
+
+The fundamental matrix of a markov chain is defined to be ``(C-I)^{-1}`` 
+where ``C`` is the sub-transition matrix that takes transient states 
+to transient states.
+
+# Parameters
+- `x`: some kind of Markov chain.
+
+# Returns
+The fundamental matrix of the Markov chain
+"""
 function fundamental_matrix(x::AbstractDiscreteMarkovChain)
     states, _, _, C = decompose(x)
     return LinearAlgebra.inv(C - LinearAlgebra.I)
 end
 
+"""
+    expected_time_to_absorption(x)
+
+# Parameters
+- `x`: some kind of Markov chain.
+
+# Returns
+An array where element ``i`` is the total number of visits to 
+transient state ``i`` before leaving the transient super class.
+
+# Note
+It is advised to have `x` in canonical form already.
+This is to avoid confusion of what states make up each 
+element of the array ouput.
+"""
 function expected_time_to_absorption(x::AbstractDiscreteMarkovChain)
     states, A, B, C = decompose(x)
     M = fundamental_matrix(x)
@@ -283,13 +344,44 @@ function expected_time_to_absorption(x::AbstractDiscreteMarkovChain)
     return EV
 end
 
+"""
+    exit_probabilities(x)
+
+# Parameters
+- `x`: some kind of Markov chain.
+
+# Returns
+An array where element ``i, j`` is the probability that transient 
+state ``i`` will enter recurrent state ``j`` on its first step 
+out of the transient states. That is, ``e_{i,j}``.
+"""
 function exit_probabilities(x::AbstractDiscreteMarkovChain)
     M = fundamental_matrix(x)
     states, A, B, C = decompose(x)
     return M * B
 end
 
-function first_passage_probabilities(x::AbstractDiscreteMarkovChain, t, i=missing, j=missing)
+"""
+    first_passage_probabilities(x, t, i=missing, j=missing)
+
+This is the probability that the process enters state ``j`` 
+for the first time at time ``t`` given that the process started 
+in state ``i`` at time 0. That is, ``f^{(t)}_{i,j}``. If no `i` 
+or `j` is given, then it will return a matrix instead with 
+entries ``f^{(t)}_{i,j}`` for `i` and `j` in the state space of `x`.
+
+# Parameters
+- `x`: some kind of Markov chain.
+- `t`: the time to calculate the first passage probability.
+- `i`: the state that the prcess starts in.
+- `j`: the state that the process must reach for the first time.
+
+# Returns
+A scalar value or a matrix depending on whether `i` and `j` are given.
+"""
+function first_passage_probabilities(
+    x::AbstractDiscreteMarkovChain, t, i=missing, j=missing
+)
     n = length(state_space(x))
     S = state_space(x)
     T = transition_matrix(x)
