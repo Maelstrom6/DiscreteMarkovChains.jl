@@ -5,7 +5,8 @@ include("Utils.jl")
 export DiscreteMarkovChain, state_space, transition_matrix, 
 communication_classes, periodicities, decompose, canonical_form,
 is_regular, is_ergodic, is_absorbing,
-stationary_distribution, fundamental_matrix, expected_time_to_absorption
+stationary_distribution, fundamental_matrix, 
+expected_time_to_absorption, exit_probabilities, first_passage_probabilities
 
 abstract type AbstractMarkovChain end
 abstract type AbstractDiscreteMarkovChain <: AbstractMarkovChain end
@@ -24,17 +25,21 @@ The following shows a basic Sunny-Cloudy-Rainy weather model.
 ```jldoctest
 using DiscreteMarkovChains
 T = [
-     0.9 0.1 0;
-     0.5 0.2 0.3;
-     0.1 0.4 0.5
-    ]
+    0.9 0.1 0;
+    0.5 0.2 0.3;
+    0.1 0.4 0.5
+]
 X = DiscreteMarkovChain(["Sunny", "Cloudy", "Rainy"], T)
-print(state_space(X))
+println(state_space(X))
 
 # output
 
 ["Sunny", "Cloudy", "Rainy"]
 ```
+
+# References
+https://en.wikipedia.org/wiki/Markov_chain#Discrete-time_Markov_chain
+https://www.dartmouth.edu/~chance/teaching_aids/books_articles/probability_book/Chapter11.pdf
 """
 struct DiscreteMarkovChain <: AbstractDiscreteMarkovChain
     state_space
@@ -167,15 +172,25 @@ end
 """
     decompose(x)
 
+All transition matrices can be reordered so that we have
+```math
+T = \\begin{pmatrix}
+A & 0\\\\
+B & C
+\\end{pmatrix}
+```
+Where ``A``, ``B`` and ``C`` are as described below. 
+``0`` is a matrix of zeros.
+
 # Parameters
 - `x`: some kind of Markov chain.
 
 # Returns 
 A tuple of four values
-- The first value is an array of the new states.
-- The second value is a matrix of recurrent states to recurrent states.
-- The third value is a matrix of transient states to recurrent states.
-- The fourth value is a matrix of transient to transient states.
+- `states`: the first value is an array of the new states.
+- `A`: the second value is a matrix of recurrent states to recurrent states.
+- `B`: the third value is a matrix of transient states to recurrent states.
+- `C`: the fourth value is a matrix of transient to transient states.
 """
 function decompose(x::AbstractMarkovChain)
     T = transition_matrix(x)
@@ -214,6 +229,7 @@ end
 
 Reorders the states of the transition matrix of `x` so that 
 recurrent states appear first and transient states appear last.
+
 
 # Parameters
 - `x`: some kind of Markov chain.
@@ -307,7 +323,7 @@ end
 """
     fundamental_matrix(x)
 
-The fundamental matrix of a markov chain is defined to be ``(C-I)^{-1}`` 
+The fundamental matrix of a markov chain is defined to be ``(I-C)^{-1}`` 
 where ``C`` is the sub-transition matrix that takes transient states 
 to transient states.
 
@@ -319,7 +335,12 @@ The fundamental matrix of the Markov chain
 """
 function fundamental_matrix(x::AbstractDiscreteMarkovChain)
     states, _, _, C = decompose(x)
-    return LinearAlgebra.inv(C - LinearAlgebra.I)
+
+    if size(C)[1] == 0
+        return Array{Any}(undef, 0, 0)
+    end
+
+    return LinearAlgebra.inv(LinearAlgebra.I - C)
 end
 
 """
@@ -329,7 +350,7 @@ end
 - `x`: some kind of Markov chain.
 
 # Returns
-An array where element ``i`` is the total number of visits to 
+A 1D array where element ``i`` is the total number of revisits to 
 transient state ``i`` before leaving the transient super class.
 
 # Note
@@ -340,7 +361,7 @@ element of the array ouput.
 function expected_time_to_absorption(x::AbstractDiscreteMarkovChain)
     states, A, B, C = decompose(x)
     M = fundamental_matrix(x)
-    EV = M*ones(Int, shape(M)[1], 1) - ones(Int, shape(M)[1], 1)
+    EV = M*ones(Int, size(M)[1]) - ones(Int, size(M)[1])
     return EV
 end
 
@@ -370,6 +391,10 @@ in state ``i`` at time 0. That is, ``f^{(t)}_{i,j}``. If no `i`
 or `j` is given, then it will return a matrix instead with 
 entries ``f^{(t)}_{i,j}`` for `i` and `j` in the state space of `x`.
 
+# Why Do We Use A Slow Algorithm?
+So that `t` can be symbolic if nessesary. That is, if symbolic math
+libraries want to use this library, it will pose no hassle.
+
 # Parameters
 - `x`: some kind of Markov chain.
 - `t`: the time to calculate the first passage probability.
@@ -378,68 +403,74 @@ entries ``f^{(t)}_{i,j}`` for `i` and `j` in the state space of `x`.
 
 # Returns
 A scalar value or a matrix depending on whether `i` and `j` are given.
+
+# References
+https://scholar.uwindsor.ca/cgi/viewcontent.cgi?article=1125&context=major-papers
+http://maths.dur.ac.uk/stats/courses/ProbMC2H/_files/handouts/1516MarkovChains2H.pdf
 """
 function first_passage_probabilities(
     x::AbstractDiscreteMarkovChain, t, i=missing, j=missing
 )
-    n = length(state_space(x))
     S = state_space(x)
     T = transition_matrix(x)
+    n = length(S)
 
     if n == 0
         return transition_matrix(x)
     end
 
     js = 1:n  # the columns to loop through
-        calc_i_ne_j = true  # calculate the off-diagonals
-        calc_i_eq_j = true  # calculate the diagonals
-        if (i !== missing) && (j !== missing)
-            js = [S[j]]
-            if i == j
-                calc_i_ne_j = false
-            else
-                calc_i_eq_j = false
-            end
+    calc_i_ne_j = true  # calculate the off-diagonals
+    calc_i_eq_j = true  # calculate the diagonals
+    if (i !== missing) && (j !== missing)
+        i = state_index(x)[i]
+        j = state_index(x)[j]
+        js = [j]
+        if i == j
+            calc_i_ne_j = false
+        else
+            calc_i_eq_j = false
         end
+    end
 
-        Ft = zeros(Int, n, n)  # empty matrix
+    Ft = zeros(eltype(T), n, n)  # empty matrix
 
-        # if i != j
-        if calc_i_ne_j
-            for j in js
+    # if i != j
+    if calc_i_ne_j
+        for j in js
 
-                P0 = copy(T)
-                P0[0:n, j] = zeros(Int, n, 1)
-                F = P0^(t-1) * P
-                Ft[1:n, j] = F[1:n, j]
-            end
+            P0 = copy(T)
+            P0[1:n, j] = zeros(eltype(T), n, 1)
+            F = P0^(t-1) * T
+            Ft[1:n, j] = F[1:n, j]
         end
+    end
 
-        # if i == j
-        if calc_i_eq_j
-            for j in js
+    # if i == j
+    if calc_i_eq_j
+        for j in js
 
-                P_ = copy(T)
-                P_[j, 1:n] = zeros(Int, 1, n)
+            P_ = copy(T)
+            P_[j, 1:n] = zeros(eltype(T), 1, n)
 
-                Pnew = zeros(Int, 2*n, 2*n)
-                Pnew[1:n, 1:n] = P
-                Pnew[(n+1):(2*n), (n+1):(2*n)] = P_
-                Pnew[n+j, 1:n] = P[j, 1:n]
+            Pnew = zeros(eltype(T), 2*n, 2*n)
+            Pnew[1:n, 1:n] = T
+            Pnew[(n+1):(2*n), (n+1):(2*n)] = P_
+            Pnew[n+j, 1:n] = T[j, 1:n]
 
-                P0 = copy(T)
-                P0[1:(2*n), j] = zeros(Int, 2*n, 1)
+            P0 = copy(Pnew)
+            P0[1:(2*n), j] = zeros(eltype(T), 2*n, 1)
 
-                F = P0^(t - 1) * Pnew
+            F = P0^(t - 1) * Pnew
 
-                Ft[j, j] = F[n+j, j]
-            end
+            Ft[j, j] = F[n+j, j]
         end
+    end
 
-        if (i !== missing) && (j !== missing)
-            return Ft[i, j]
-        end
-        return Ft
+    if (i !== missing) && (j !== missing)
+        return Ft[i, j]
+    end
+    return Ft
 end
 
 # https://cran.r-project.org/web/packages/markovchain/vignettes/an_introduction_to_markovchain_package.pdf

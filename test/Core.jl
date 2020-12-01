@@ -75,7 +75,10 @@ end
         0 1//4 3//4;
     ]
     X = DiscreteMarkovChain(["Sunny", "Cloudy", "Rainy"], T)
-    @test decompose(X) == (["Sunny", "Cloudy", "Rainy"], T[1:1, 1:1], T[2:3, 1:1], T[2:3, 2:3])
+    @test decompose(X) == (
+        ["Sunny", "Cloudy", "Rainy"], 
+        T[1:1, 1:1], T[2:3, 1:1], T[2:3, 2:3],
+    )
     @test canonical_form(X) == (["Sunny", "Cloudy", "Rainy"], T)
 
     T = [
@@ -164,7 +167,7 @@ end
 
 @testset "Stationary Distribution" begin
     # empty test
-    T = [][:,:]
+    T = Array{Any}(undef, 0, 0)
     X = DiscreteMarkovChain([], T)
     @test stationary_distribution(X) == Array{Any}(undef, 0, 0)
 
@@ -175,4 +178,116 @@ end
     ]
     X = DiscreteMarkovChain(1:3, T)
     @test stationary_distribution(X) == [11//39, 16//39, 4//13]
+end
+
+@testset "Fundamental Matrix" begin
+    # empty test
+    T = Array{Any}(undef, 0, 0)
+    X = DiscreteMarkovChain([], T)
+    @test fundamental_matrix(X) == Array{Any}(undef, 0, 0)
+
+    T = [
+        1 0 0 0 0;
+        1//2 0 1//2 0 0;
+        0 1//2 0 1//2 0;
+        0 0 1//2 0 1//2;
+        0 0 0 0 1;
+    ]
+    X = DiscreteMarkovChain([0, 1, 2, 3, 4], T)
+    desired_new_matrix = [
+        3//2 1 1//2;
+        1 2 1;
+        1//2 1 3//2;
+    ]
+    @test fundamental_matrix(X) == desired_new_matrix
+end
+
+@testset "Expected Time To Absorption" begin
+    # empty test
+    T = Array{Any}(undef, 0, 0)
+    X = DiscreteMarkovChain([], T)
+    @test expected_time_to_absorption(X) == Any[]
+
+    T = [
+        1 0 0 0 0;
+        1//2 0 1//2 0 0;
+        0 1//2 0 1//2 0;
+        0 0 1//2 0 1//2;
+        0 0 0 0 1;
+    ]
+    X = DiscreteMarkovChain([0, 1, 2, 3, 4], T)
+    @test expected_time_to_absorption(X) == [2, 3, 2]
+
+    T = [
+        1 0 0 0 0;
+        0 1 0 0 0;
+        0 0 0 1 0;
+        1//4 1//4 1//4 0 1//4;
+        1//2 0 0 1//2 0;
+    ]
+    X = DiscreteMarkovChain([0, 1, 2, 3, 4], T)
+    @test expected_time_to_absorption(X) == [12//5, 7//5, 6//5]
+end
+
+@testset "Exit Probability" begin
+    # empty test
+    T = Array{Any}(undef, 0, 0)
+    X = DiscreteMarkovChain([], T)
+    @test exit_probabilities(X) == Array{Any}(undef, 0, 0)
+
+    T = [
+        1 0 0 0 0;
+        0 1 0 0 0;
+        0 0 0 1 0;
+        1//4 1//4 1//4 0 1//4;
+        1//2 0 0 1//2 0;
+    ]
+    X = DiscreteMarkovChain([0, 1, 2, 3, 4], T)
+    desired_new_matrix = [
+        3//5 2//5;
+        3//5 2//5;
+        4//5 1//5;
+    ]
+    @test exit_probabilities(X) == desired_new_matrix
+
+    T = [
+        2//5 3//5 0 0 0 0;
+        9//10 1//10 0 0 0 0;
+        0 0 1 0 0 0;
+        0 0 0 0 1 0;
+        0 1//4 1//4 1//4 0 1//4;
+        0 1//2 0 0 1//2 0;
+    ]
+    X = DiscreteMarkovChain([0, 1, 2, 3, 4, 5], T)
+    desired_new_matrix = [
+        0 6//10 4//10;
+        0 6//10 4//10;
+        0 8//10 2//10;
+    ]
+    @test exit_probabilities(X) == desired_new_matrix
+end
+
+@testset "First Passage" begin
+    # empty test
+    T = Array{Any}(undef, 0, 0)
+    X = DiscreteMarkovChain([], T)
+    @test first_passage_probabilities(X, 1) == Array{Any}(undef, 0, 0)
+
+    T = [
+        2//10 4//10 4//10;
+        3//10 3//10 4//10;
+        5//10 4//10 1//10;
+    ]
+    X = DiscreteMarkovChain(["A", "B", "C"], T)
+    @test first_passage_probabilities(X, 1) == T
+    
+    @test first_passage_probabilities(X, 1, "A", "C") == 4//10
+    @test first_passage_probabilities(X, 2, "A", "C") == 24//100
+    @test first_passage_probabilities(X, 3, "A", "C") == 144//1000
+    @test first_passage_probabilities(X, 4, "A", "C") == 864//10000
+
+    @test first_passage_probabilities(X, 1, "A", "A") == 2//10
+    @test first_passage_probabilities(X, 2, "A", "A") == 32//100
+    @test first_passage_probabilities(X, 3, "A", "A") == 184//1000
+    @test first_passage_probabilities(X, 4, "A", "A") == 1152//10000
 end
