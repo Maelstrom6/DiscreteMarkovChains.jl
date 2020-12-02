@@ -465,6 +465,61 @@ to being ergodic and aperiodic.
 
 # Returns
 `true` if the Markov chain, `x`, is regular.
+
+# Examples
+We will set up a matrix with 2 communication classes and
+show that it is not regular.
+
+```jldoctest is_regular
+using DiscreteMarkovChains
+T = [
+    0 1 0;
+    1 0 0;
+    0 0 1;
+]
+X = DiscreteMarkovChain(T)
+
+is_regular(X)
+
+# output
+
+false
+```
+
+Repeat the above but now all states communicate.
+
+```jldoctest is_regular
+T = [
+    0.0 0.5 0.5;
+    0.0 0.0 1.0;
+    1.0 0.0 0.0;
+]
+X = DiscreteMarkovChain(T)
+
+is_regular(X)
+
+# output
+
+true
+```
+
+Notice how a periodic chain is not regular even though
+there is only one communication class.
+
+```jldoctest is_regular
+T = [
+    0 1 0;
+    0 0 1;
+    1 0 0;
+]
+X = DiscreteMarkovChain(T)
+
+is_regular(X)
+
+# output
+
+false
+```
 """
 function is_regular(x::AbstractMarkovChain)
     classes, _, periods = periodicities(x)
@@ -497,6 +552,60 @@ chain might still be accessible from another though.
 `true` if the Markov chain, `x`, is ergodic.
 This is, if every state can be accessed from every other state.
 Another term for this is irreducible.
+
+# Examples
+We will set up a matrix with 2 communication classes and
+show that it is not ergodic.
+
+```jldoctest is_ergodic
+using DiscreteMarkovChains
+T = [
+    0 1 0;
+    1 0 0;
+    0 0 1;
+]
+X = DiscreteMarkovChain(T)
+
+is_ergodic(X)
+
+# output
+
+false
+```
+
+Repeat the above but now all states communicate.
+
+```jldoctest is_ergodic
+T = [
+    0.0 0.5 0.5;
+    0.0 0.0 1.0;
+    1.0 0.0 0.0;
+]
+X = DiscreteMarkovChain(T)
+
+is_ergodic(X)
+
+# output
+
+true
+```
+
+Notice how a periodic chain is regular no matter the periodicity.
+
+```jldoctest is_ergodic
+T = [
+    0 1 0;
+    0 0 1;
+    1 0 0;
+]
+X = DiscreteMarkovChain(T)
+
+is_ergodic(X)
+
+# output
+
+true
+```
 """
 function is_ergodic(x::AbstractMarkovChain)
     classes, _ = communication_classes(x)
@@ -517,6 +626,62 @@ state (not necessarily in one step).
 # Returns
 `true` if the Markov chain, `x`, is an absorbing chain.
 So the process is guarenteed to be absorbed eventually.
+
+# Examples
+The following is a typical example of an absorbing chain.
+
+```jldoctest is_absorbing
+using DiscreteMarkovChains
+T = [
+    1.0 0.0 0.0;
+    0.1 0.8 0.1;
+    0.0 0.3 0.7;
+]
+X = DiscreteMarkovChain(T)
+
+is_absorbing(X)
+
+# output
+
+true
+```
+
+If a Markov chain does not have an absorbing state then the chain
+is not absorbing. The converse is not true as we will see soon.
+
+```jldoctest is_absorbing
+T = [
+    0.5 0.5 0.0;
+    0.5 0.0 0.5;
+    0.0 0.5 0.5;
+]
+X = DiscreteMarkovChain(T)
+
+is_absorbing(X)
+
+# output
+
+false
+```
+
+In the following, the chain has multiple absorbing states but the
+process is not guarenteed to be absorbed into those states.
+
+```jldoctest is_absorbing
+T = [
+    1 0 0 0;
+    0 1 0 0;
+    0 0 0 1;
+    0 0 1 0;
+]
+X = DiscreteMarkovChain(T)
+
+is_absorbing(X)
+
+# output
+
+false
+```
 
 # References
 1. [Dartmouth College](https://www.dartmouth.edu/~chance/teaching_aids/books_articles/probability_book/Chapter11.pdf)

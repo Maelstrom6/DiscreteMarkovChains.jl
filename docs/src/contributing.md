@@ -25,17 +25,20 @@ The overall style used it the [Blue style guide](https://github.com/invenia/Blue
        0.0 1.0;
        0.5 2.3;
    ]
-    # yes
+
+   # yes
    T = [
        .12 .35;
        .55 .90;
    ]
-    # no
+
+   # no
    T = [
        0 1.0;
        0.5 2.3;
    ]
-    # no
+
+   # no
    T = [
        .12 .35;
        .55 .9;
