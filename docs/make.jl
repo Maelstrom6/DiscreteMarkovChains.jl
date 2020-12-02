@@ -13,7 +13,6 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
-        "introduction.md",
         "Functions" => [
             "functions/basic.md",
             "functions/simple.md",
@@ -22,6 +21,7 @@ makedocs(;
             "functions/mean.md",
             "functions/internal.md",
         ],
+        "contributing.md",
     ],
 )
 

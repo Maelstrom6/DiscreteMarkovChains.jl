@@ -2,10 +2,10 @@ module DiscreteMarkovChains
 import LinearAlgebra
 
 include("Utils.jl")
-export DiscreteMarkovChain, state_space, transition_matrix, 
+export DiscreteMarkovChain, state_space, transition_matrix,
 communication_classes, periodicities, decompose, canonical_form,
 is_regular, is_ergodic, is_absorbing,
-stationary_distribution, fundamental_matrix, 
+stationary_distribution, fundamental_matrix,
 expected_time_to_absorption, exit_probabilities, first_passage_probabilities,
 mean_recurrence_time, mean_first_passage_time
 
@@ -18,13 +18,13 @@ abstract type AbstractDiscreteMarkovChain <: AbstractMarkovChain end
 
 Creates a new discrete Markov chain object.
 
-# Parameters
+# Arguments
 - `state_space`: The names of the states that make up the Markov chain.
 - `transition_matrix`: The single step transition probability matrix.
 
 # Examples
 The following shows a basic Sunny-Cloudy-Rainy weather model.
-```jldoctest core
+```jldoctest DiscreteMarkovChain
 using DiscreteMarkovChains
 T = [
     0.9 0.1 0;
@@ -39,7 +39,7 @@ println(state_space(X))
 ["Sunny", "Cloudy", "Rainy"]
 ```
 
-```jldoctest core
+```jldoctest DiscreteMarkovChain
 println(transition_matrix(X))
 
 # output
@@ -48,8 +48,8 @@ println(transition_matrix(X))
 ```
 
 # References
-https://en.wikipedia.org/wiki/Markov_chain#Discrete-time_Markov_chain
-https://www.dartmouth.edu/~chance/teaching_aids/books_articles/probability_book/Chapter11.pdf
+1. [Wikipedia](https://en.wikipedia.org/wiki/Markov_chain#Discrete-time_Markov_chain)
+2. [Dartmouth College](https://www.dartmouth.edu/~chance/teaching_aids/books_articles/probability_book/Chapter11.pdf)
 """
 struct DiscreteMarkovChain <: AbstractDiscreteMarkovChain
     state_space
@@ -68,7 +68,7 @@ function check(state_space, transition_matrix, type)
         error("The state space must have unique elements.")
     end
     if !is_row_stochastic(transition_matrix, required_row_sum(type))
-        error("The transition matrix should be row-stochastic 
+        error("The transition matrix should be row-stochastic
         (each row must sum up to $(required_row_sum(type))).")
     end
 end
@@ -79,7 +79,13 @@ end
 """
     state_space(x)
 
-# Parameters
+# Definitions
+The state space of a Markov chain is the (ordered)
+set of values that the process is able to take on.
+For example, in a Sunny-Cloudy-Rainy weather model,
+the state space is `["Sunny", "Cloudy", "Rainy"]`.
+
+# Arguments
 - `x`: some kind of Markov chain.
 
 # Returns
@@ -90,7 +96,14 @@ state_space(x::AbstractMarkovChain) = x.state_space
 """
     transition_matrix(x)
 
-# Parameters
+# Definitions
+The one-step transition matrix, ``T``, of a Markov chain, ``{X_t}``
+is a matrix whose ``(i,j)``th entry is the probability of the process
+being in state ``j`` at time 1 given that the process started
+in state ``i`` at time 0. That is
+``T = p^{(1)}_{i,j} = \\mathbb{P}(X_1=j | X_0=i)``.
+
+# Arguments
 - `x`: some kind of Markov chain.
 
 # Returns
@@ -101,34 +114,33 @@ transition_matrix(x::AbstractMarkovChain) = x.transition_matrix
 """
     state_index(x)
 
-# Parameters
+# Arguments
 - `x`: some kind of Markov chain.
 
-# Returns 
-A dictionary mapping each state in a Markov chain to its position in the state space. 
-It is essentially the inverse of state_space(x).
+# Returns
+A dictionary mapping each state in a Markov chain to its position in the state space.
+It is essentially the inverse of `state_space(x)`.
 """
 state_index(x::AbstractMarkovChain) = Dict(
     state => index for (index, state) in enumerate(state_space(x))
 )
-Base.length(x::AbstractMarkovChain) = length(state_space(x))
 
 """
     digraph(x)
 
 Creates a digraph (directed graph) representation of a Markov chain.
 
-# Parameters
+# Arguments
 - `x`: some kind of Markov chain.
 
 # Returns
-A 1D array of 2-tuples. An element ``(i, j)`` is in the array 
-iff the transition matrix at ``i,j`` is nonzero.
+A 1D array of 2-tuples. An element ``(i, j)`` is in the array
+iff the transition matrix at ``(i,j)`` is nonzero.
 """
 function digraph(x::AbstractMarkovChain)
     T = transition_matrix(x)
     V = 1:(size(T)[1])
-    return [(i, j) for i in V for j in V if T[i, j] != 0] 
+    return [(i, j) for i in V for j in V if T[i, j] != 0]
 end
 
 """
@@ -137,7 +149,11 @@ end
 Tests whether a matrix, x, is row stochasitc.
 The desired sum of each row can be specified as well.
 
-# Parameters
+# Definitions
+A matrix is said to be row stochasic if all its rows sum to 1.
+This Definitions is extened so that all its rows sum to `row_sum`.
+
+# Arguments
 - `mat`: a matrix that we want to check.
 - `row_sum`: the desired value that each row should total to.
 
@@ -155,14 +171,71 @@ end
 """
     communication_classes(x)
 
-# Parameters
+# Definitions
+A state ``j`` is accessible from state ``i`` if it is possible
+to eventually reach state ``j`` given that the process started
+in state ``i``. That is ``∃ \\, t ∈ \\mathbb{N}`` such that
+``p^{(t)}_{i,j} > 0``.
+
+States ``i`` and ``j`` communicate if ``i`` is accessible
+from ``j`` and ``j`` is accessible from ``i``.
+
+A communication class is the set of states in a Markov chain
+that are all accessible from one another. Communication classes
+form a class in the mathematical sense. They also form a
+partition of the state space.
+
+A state ``i`` is recurrent if the process is guarenteed to
+eventually return to state ``i`` given that the process
+started in state ``i``. If a state ``i`` is not recurrent,
+then it is said to be transient.
+
+# Arguments
 - `x`: some kind of Markov chain.
 
 # Returns
-A tuple containing 2 arrays. 
-- This first array contains C arrays which store the states that communicate. 
-- The second array is an array of Bool where the ith value is true if the 
-  ith communication class is recurrent. 
+A tuple containing 2 arrays.
+- This first array contains C arrays which store the states that communicate.
+- The second array is an array of Bool where the ith value is true if the
+  ith communication class is recurrent.
+
+# Examples
+```jldoctest communication_classes
+using DiscreteMarkovChains
+T = [
+    1 0;
+    0 1;
+]
+X = DiscreteMarkovChain(T)
+
+communication_classes(X)
+
+# output
+
+([[1], [2]], Any[true, true])
+```
+
+So the Markov chain has two communication classes and both are recurrent.
+
+```jldoctest communication_classes
+T = [
+    .5 .5 .0;
+    .2 .8 .0;
+    .1 .2 .7;
+]
+X = DiscreteMarkovChain(["Sunny", "Cloudy", "Rainy"], T)
+
+communication_classes(X)
+
+# output
+
+([["Sunny", "Cloudy"], ["Rainy"]], Any[true, false])
+```
+
+So the Sunny and Cloudy states communicate and are recurrent.
+The Rainy state is transient.
+Note that this is not a very good weather model since once it
+stops raining, it will never rain again.
 """
 function communication_classes(x::AbstractMarkovChain)
     S = state_space(x)
@@ -186,19 +259,67 @@ end
 """
     periodicities(x::AbstractDiscreteMarkovChain)
 
-A more advanced version of `communication_classes` 
-designed for discrete Markov chains. It is the same as 
+A more advanced version of `communication_classes`
+designed for discrete Markov chains. It is the same as
 `communication_classes` but it returns periodicities as well.
 
-# Parameters
+# Definitions
+The period, ``d_i`` of a state ``i`` is the greatest common denominator
+of all integers ``n ∈ \\mathbb{N}`` for which ``p^{(n)}_{i,i} > 0``.
+Written more succinctly,
+```math
+d_i = \\text{gcd}\\{ n ∈ \\mathbb{N} | p^{(n)}_{i,i} > 0 \\}
+```
+If ``d_i=1`` then state ``i`` is said to be aperiodic.
+
+# Arguments
 - `x`: some kind of discrete Markov chain.
 
 # Returns
-A tuple containing 3 arrays. 
-- This first array contains C arrays which store the states that communicate. 
-- The second array is an array of Bool where the ith value is true if the 
-  ith communication class is recurrent. 
+A tuple containing 3 arrays.
+- This first array contains C arrays which store the states that communicate.
+- The second array is an array of Bool where the ith value is true if the
+  ith communication class is recurrent.
 - The third array is the periodicity of each communication class.
+
+# Examples
+```jldoctest periodicities
+using DiscreteMarkovChains
+T = [
+    1 0;
+    0 1;
+]
+X = DiscreteMarkovChain(T)
+
+periodicities(X)
+
+# output
+
+([[1], [2]], Any[true, true], Any[1, 1])
+```
+
+So the Markov chain has two communication classes and both are recurrent and aperiodic.
+
+```jldoctest periodicities
+T = [
+    0.0 1.0 0.0;
+    1.0 0.0 0.0;
+    0.1 0.2 0.7;
+]
+X = DiscreteMarkovChain(["Sunny", "Cloudy", "Rainy"], T)
+
+periodicities(X)
+
+# output
+
+([["Sunny", "Cloudy"], ["Rainy"]], Any[true, false], Any[2, 1])
+```
+
+So the Sunny and Cloudy states communicate and are recurrent with period 2.
+The Rainy state is transient and aperiodic.
+Note that this is not a very good weather model since once it
+stops raining, it will never rain again. Also, each day after that,
+the process will oscillate between Sunny and Cloudy.
 """
 function periodicities(x::AbstractDiscreteMarkovChain)
     SI = state_index(x)
@@ -225,18 +346,35 @@ A & 0\\\\
 B & C
 \\end{pmatrix}
 ```
-Where ``A``, ``B`` and ``C`` are as described below. 
+Where ``A``, ``B`` and ``C`` are as described below.
 ``0`` is a matrix of zeros.
 
-# Parameters
+# Arguments
 - `x`: some kind of Markov chain.
 
-# Returns 
+# Returns
 A tuple of four values
 - `states`: the first value is an array of the new states.
 - `A`: the second value is a matrix of recurrent states to recurrent states.
 - `B`: the third value is a matrix of transient states to recurrent states.
 - `C`: the fourth value is a matrix of transient to transient states.
+
+# Examples
+```jldoctest decompose
+using DiscreteMarkovChains
+T = [
+    0.0 1.0 0.0;
+    1.0 0.0 0.0;
+    0.1 0.2 0.7;
+]
+X = DiscreteMarkovChain(["Sunny", "Cloudy", "Rainy"], T)
+
+decompose(X)
+
+# output
+
+(Any["Sunny", "Cloudy", "Rainy"], [0.0 1.0; 1.0 0.0], [0.1 0.2], [0.7])
+```
 """
 function decompose(x::AbstractMarkovChain)
     T = transition_matrix(x)
@@ -255,15 +393,15 @@ function decompose(x::AbstractMarkovChain)
     indexes = [state_index(x)[state] for state in states]
 
     A = [
-        T[indexes[i], indexes[j]] 
+        T[indexes[i], indexes[j]]
         for i in 1:length(r_states), j in 1:length(r_states)
     ]
     B = [
-        T[indexes[length(r_states)+i], indexes[j]] 
+        T[indexes[length(r_states)+i], indexes[j]]
         for i in 1:length(t_states), j in 1:length(r_states)
     ]
     C = [
-        T[indexes[length(r_states)+i], indexes[length(r_states)+j]] 
+        T[indexes[length(r_states)+i], indexes[length(r_states)+j]]
         for i in 1:length(t_states), j in 1:length(t_states)
     ]
 
@@ -273,15 +411,36 @@ end
 """
     canonical_form(x)
 
-Reorders the states of the transition matrix of `x` so that 
+Reorders the states of the transition matrix of `x` so that
 recurrent states appear first and transient states appear last.
 
-
-# Parameters
+# Arguments
 - `x`: some kind of Markov chain.
 
 # Returns
 A tuple with the new states and the new transition matrix.
+
+# Examples
+We will use the same matrix as previous examples but change the order of it.
+
+```jldoctest canonical_form
+using DiscreteMarkovChains
+T = [
+    0.7 0.2 0.1;
+    0.0 0.0 1.0;
+    0.0 1.0 0.0;
+]
+X = DiscreteMarkovChain(["Rainy", "Cloudy", "Sunny"], T)
+
+canonical_form(X)
+
+# output
+
+(Any["Cloudy", "Sunny", "Rainy"], [0.0 1.0 0.0; 1.0 0.0 0.0; 0.2 0.1 0.7])
+```
+
+Here, Cloudy and Sunny are recurrent states so they appear first.
+Rainy is a transient state so it appears last.
 """
 function canonical_form(x::AbstractMarkovChain)
     states, A, B, C = decompose(x)
@@ -296,7 +455,12 @@ end
 """
     is_regular(x)
 
-# Parameters
+# Definitions
+A Markov chain is called a regular chain if some power of the
+transition matrix has only positive elements. This is equivalent
+to being ergodic and aperiodic.
+
+# Arguments
 - `x`: some kind of Markov chain.
 
 # Returns
@@ -313,7 +477,20 @@ end
 """
     is_ergodic(x)
 
-# Parameters
+# Definitions
+A Markov chain is called an ergodic chain if it is possible to go
+from every state to every state (not necessarily in one move).
+That is, every state communicates and the whole tranistion
+matrix forms one communication class.
+
+In many books, ergodic Markov chains are called irreducible.
+
+If a Markov chain is not irreducible then it is reducible.
+This means that the Markov chain can be broken down into
+smaller irreducible chains that do not communicate. One
+chain might still be accessible from another though.
+
+# Arguments
 - `x`: some kind of Markov chain.
 
 # Returns
@@ -329,12 +506,20 @@ end
 """
     is_absorbing(x)
 
-# Parameters
+# Definitions
+A Markov chain is absorbing if it has at least one absorbing
+state, and if from every state it is possible to go to an absorbing
+state (not necessarily in one step).
+
+# Arguments
 - `x`: some kind of Markov chain.
 
 # Returns
 `true` if the Markov chain, `x`, is an absorbing chain.
 So the process is guarenteed to be absorbed eventually.
+
+# References
+1. [Dartmouth College](https://www.dartmouth.edu/~chance/teaching_aids/books_articles/probability_book/Chapter11.pdf)
 """
 function is_absorbing(x::AbstractMarkovChain)
     states, A, B, C = decompose(x)
@@ -345,11 +530,22 @@ end
 """
     stationary_distribution(x)
 
-# Parameters
+# Definitions
+A stationary distribution of a Markov chain is a probability distribution
+that remains unchanged in the Markov chain as time progresses.
+It is a row vector, ``w`` such that its elements sum to 1 and it satisfies
+``w'T = w'``. ``T`` is the one-step transiton matrix of the Markov chain.
+
+In other words, ``w`` is invariant by the matrix ``T``.
+
+# Arguments
 - `x`: some kind of Markov chain.
 
 # Returns
-A column vector, `w`, that satisfies the equation ``w'T = w``.
+A column vector, ``w``, that satisfies the equation ``w'T = w'``.
+
+# References
+1. [Brilliant.org](https://brilliant.org/wiki/stationary-distributions/#:~:text=A%20stationary%20distribution%20of%20a,transition%20matrix%20P%2C%20it%20satisfies)
 """
 function stationary_distribution(x::AbstractMarkovChain)
     T = transition_matrix(x)
@@ -369,11 +565,16 @@ end
 """
     fundamental_matrix(x)
 
-The fundamental matrix of a markov chain is defined to be ``(I-C)^{-1}`` 
-where ``C`` is the sub-transition matrix that takes transient states 
+# Definitions
+The fundamental matrix of a markov chain is defined to be ``(I-C)^{-1}``
+where ``C`` is the sub-transition matrix that takes transient states
 to transient states.
 
-# Parameters
+The ``(i, j)``th entry of the fundamental matrix is the expected
+number of times the chain is in state ``j`` over the whole process
+given that the chain started in state ``i``.
+
+# Arguments
 - `x`: some kind of Markov chain.
 
 # Returns
@@ -392,19 +593,21 @@ end
 """
     expected_time_to_absorption(x)
 
-The expected number of steps that the process will take while in 
-the transient super class given that the process started in state i.
+# Definitions
+The expected time to absorption is the expected number of steps that
+the process will take while in the transient super class given that
+the process started in state ``i``.
 
-# Parameters
+# Arguments
 - `x`: some kind of Markov chain.
 
 # Returns
-A 1D array where element ``i`` is the total number of revisits to 
+A 1D array where element ``i`` is the total number of revisits to
 transient state ``i`` before leaving the transient super class.
 
 # Note
 It is advised to have `x` in canonical form already.
-This is to avoid confusion of what states make up each 
+This is to avoid confusion of what states make up each
 element of the array ouput.
 """
 function expected_time_to_absorption(x::AbstractDiscreteMarkovChain)
@@ -417,12 +620,12 @@ end
 """
     exit_probabilities(x)
 
-# Parameters
+# Arguments
 - `x`: some kind of Markov chain.
 
 # Returns
-An array where element ``i, j`` is the probability that transient 
-state ``i`` will enter recurrent state ``j`` on its first step 
+An array where element ``(i, j)`` is the probability that transient
+state ``i`` will enter recurrent state ``j`` on its first step
 out of the transient states. That is, ``e_{i,j}``.
 """
 function exit_probabilities(x::AbstractDiscreteMarkovChain)
@@ -434,17 +637,18 @@ end
 """
     first_passage_probabilities(x, t, i=missing, j=missing)
 
-This is the probability that the process enters state ``j`` 
-for the first time at time ``t`` given that the process started 
-in state ``i`` at time 0. That is, ``f^{(t)}_{i,j}``. If no `i` 
-or `j` is given, then it will return a matrix instead with 
+# Definitions
+This is the probability that the process enters state ``j``
+for the first time at time ``t`` given that the process started
+in state ``i`` at time 0. That is, ``f^{(t)}_{i,j}``. If no `i`
+or `j` is given, then it will return a matrix instead with
 entries ``f^{(t)}_{i,j}`` for `i` and `j` in the state space of `x`.
 
 # Why Do We Use A Slow Algorithm?
 So that `t` can be symbolic if nessesary. That is, if symbolic math
 libraries want to use this library, it will pose no hassle.
 
-# Parameters
+# Arguments
 - `x`: some kind of Markov chain.
 - `t`: the time to calculate the first passage probability.
 - `i`: the state that the prcess starts in.
@@ -454,8 +658,8 @@ libraries want to use this library, it will pose no hassle.
 A scalar value or a matrix depending on whether `i` and `j` are given.
 
 # References
-https://scholar.uwindsor.ca/cgi/viewcontent.cgi?article=1125&context=major-papers
-http://maths.dur.ac.uk/stats/courses/ProbMC2H/_files/handouts/1516MarkovChains2H.pdf
+1. [University of Windsor](https://scholar.uwindsor.ca/cgi/viewcontent.cgi?article=1125&context=major-papers)
+2. [Durham University](http://maths.dur.ac.uk/stats/courses/ProbMC2H/_files/handouts/1516MarkovChains2H.pdf)
 """
 function first_passage_probabilities(
     x::AbstractDiscreteMarkovChain, t, i=missing, j=missing
@@ -468,9 +672,9 @@ function first_passage_probabilities(
         return transition_matrix(x)
     end
 
-    js = 1:n  # the columns to loop through
-    calc_i_ne_j = true  # calculate the off-diagonals
-    calc_i_eq_j = true  # calculate the diagonals
+    js = 1:n  # The columns to loop through
+    calc_i_ne_j = true  # Calculate the off-diagonals
+    calc_i_eq_j = true  # Calculate the diagonals
     if (i !== missing) && (j !== missing)
         i = state_index(x)[i]
         j = state_index(x)[j]
@@ -482,9 +686,9 @@ function first_passage_probabilities(
         end
     end
 
-    Ft = zeros(eltype(T), n, n)  # empty matrix
+    Ft = zeros(eltype(T), n, n)  # Empty matrix
 
-    # if i != j
+    # If i != j
     if calc_i_ne_j
         for j in js
 
@@ -495,7 +699,7 @@ function first_passage_probabilities(
         end
     end
 
-    # if i == j
+    # If i == j
     if calc_i_eq_j
         for j in js
 
@@ -525,14 +729,15 @@ end
 """
     mean_recurrence_time(x)
 
-This is the expected number of steps for the process to 
-return to state i given that the process started in state i.
+# Definitions
+This is the expected number of steps for the process to
+return to state i given that the process started in state ``i``.
 
-# Parameters
+# Arguments
 - `x`: some kind of Markov chain.
 
 # Returns
-A 1D array where the ith entry is the mean recurrence time of state i.
+A 1D array where the ith entry is the mean recurrence time of state ``i``.
 
 # Note
 `x` must be irreducible (i.e. ergodic).
@@ -544,15 +749,16 @@ end
 """
     mean_first_passage_time(x)
 
-This is the expected number of steps for the process to 
-reach state j given that the process started in state i.
+# Definitions
+This is the expected number of steps for the process to
+reach state ``j`` given that the process started in state ``i``.
 
-# Parameters
+# Arguments
 - `x`: some kind of Markov chain.
 
 # Returns
-A matrix where the i,jth entry is the mean recurrence time of state i. 
-Diagonal elements are 0. 
+A matrix where the ``(i,j)``th entry is the mean recurrence time of state ``i``.
+Diagonal elements are 0.
 The diagonals would have represented the mean recurrence time.
 """
 function mean_first_passage_time(x::AbstractMarkovChain)
@@ -560,7 +766,7 @@ function mean_first_passage_time(x::AbstractMarkovChain)
     T = transition_matrix(x)
 
     if n == 0
-        return T  # keeps eltype the same
+        return T  # Keeps eltype the same
     end
 
     W = repeat(stationary_distribution(x)', n)
@@ -571,4 +777,4 @@ function mean_first_passage_time(x::AbstractMarkovChain)
     return M
 end
 
-end # module
+end  # Module

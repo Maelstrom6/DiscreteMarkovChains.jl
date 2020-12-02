@@ -24,7 +24,7 @@ See [the documentation](https://Maelstrom6.github.io/DiscreteMarkovChains.jl/dev
 
 We want to find out if this chain is an absorbing chain.
 
-```jldoctest home; output = false
+```julia
 using DiscreteMarkovChains
 
 transition_matrix = [
@@ -42,7 +42,7 @@ false
 
 Let's try find the communication classes, see if they are recurrent and what their periodicity is.
 
-```jldoctest home; output = false
+```julia
 periodicities(chain)
 
 # output
@@ -54,7 +54,7 @@ This means that we have one communication class with 3 recurrent states. Their p
 
 Since we have a single communication class, we can calculate the mean recurrence times.
 
-```jldoctest home; output = false
+```julia
 mean_recurrence_time(chain)
 
 # output

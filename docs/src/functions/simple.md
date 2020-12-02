@@ -1,4 +1,6 @@
-# Simple Functions
+# Boolean Functions
+
+These functions have a boolean output. They are fairly simple and tend to categorize Markov chains into various labels.
 
 ## Contents
 
