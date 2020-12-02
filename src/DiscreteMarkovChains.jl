@@ -13,6 +13,7 @@ abstract type AbstractMarkovChain end
 abstract type AbstractDiscreteMarkovChain <: AbstractMarkovChain end
 
 """
+    DiscreteMarkovChain(transition_matrix)
     DiscreteMarkovChain(state_space, transition_matrix)
 
 Creates a new discrete Markov chain object.
@@ -23,7 +24,7 @@ Creates a new discrete Markov chain object.
 
 # Examples
 The following shows a basic Sunny-Cloudy-Rainy weather model.
-```jldoctest
+```jldoctest core
 using DiscreteMarkovChains
 T = [
     0.9 0.1 0;
@@ -38,6 +39,14 @@ println(state_space(X))
 ["Sunny", "Cloudy", "Rainy"]
 ```
 
+```jldoctest core
+println(transition_matrix(X))
+
+# output
+
+[0.9 0.1 0.0; 0.5 0.2 0.3; 0.1 0.4 0.5]
+```
+
 # References
 https://en.wikipedia.org/wiki/Markov_chain#Discrete-time_Markov_chain
 https://www.dartmouth.edu/~chance/teaching_aids/books_articles/probability_book/Chapter11.pdf
@@ -45,6 +54,26 @@ https://www.dartmouth.edu/~chance/teaching_aids/books_articles/probability_book/
 struct DiscreteMarkovChain <: AbstractDiscreteMarkovChain
     state_space
     transition_matrix
+    function DiscreteMarkovChain(state_space, transition_matrix)
+        check(state_space, transition_matrix, DiscreteMarkovChain)
+        new(state_space, transition_matrix)
+    end
+end
+required_row_sum(::Core.Type{<:AbstractDiscreteMarkovChain}) = 1
+function check(state_space, transition_matrix, type)
+    if length(state_space) != size(transition_matrix)[1]
+        error("The state space and transition matrix should be the same size.")
+    end
+    if length(unique(state_space)) != length(state_space)
+        error("The state space must have unique elements.")
+    end
+    if !is_row_stochastic(transition_matrix, required_row_sum(type))
+        error("The transition matrix should be row-stochastic 
+        (each row must sum up to $(required_row_sum(type))).")
+    end
+end
+function DiscreteMarkovChain(transition_matrix)
+    return DiscreteMarkovChain(1:(size(transition_matrix)[1]), transition_matrix)
 end
 
 """
@@ -54,7 +83,7 @@ end
 - `x`: some kind of Markov chain.
 
 # Returns
-The state space of a Markov chain.
+The state space of the Markov chain.
 """
 state_space(x::AbstractMarkovChain) = x.state_space
 
@@ -65,7 +94,7 @@ state_space(x::AbstractMarkovChain) = x.state_space
 - `x`: some kind of Markov chain.
 
 # Returns
-The transition matrix of a Markov chain.
+The transition matrix of the Markov chain.
 """
 transition_matrix(x::AbstractMarkovChain) = x.transition_matrix
 
@@ -84,6 +113,18 @@ state_index(x::AbstractMarkovChain) = Dict(
 )
 Base.length(x::AbstractMarkovChain) = length(state_space(x))
 
+"""
+    digraph(x)
+
+Creates a digraph (directed graph) representation of a Markov chain.
+
+# Parameters
+- `x`: some kind of Markov chain.
+
+# Returns
+A 1D array of 2-tuples. An element ``(i, j)`` is in the array 
+iff the transition matrix at ``i,j`` is nonzero.
+"""
 function digraph(x::AbstractMarkovChain)
     T = transition_matrix(x)
     V = 1:(size(T)[1])
@@ -91,20 +132,24 @@ function digraph(x::AbstractMarkovChain)
 end
 
 """
-    is_row_stochastic(x, row_sum=1)
+    is_row_stochastic(mat, row_sum=1)
 
 Tests whether a matrix, x, is row stochasitc.
 The desired sum of each row can be specified as well.
 
 # Parameters
-- `x`: some kind of Markov chain.
+- `mat`: a matrix that we want to check.
+- `row_sum`: the desired value that each row should total to.
 
 # Returns
-`true` if the given matrix x is row-stochasitc.
+`true` if the given matrix, `mat`, is row-stochasitc.
 """
-function is_row_stochastic(x, row_sum=1)
-    n, p = size(x)
-    return repeat([row_sum], n) ≈ x*ones(p)
+function is_row_stochastic(mat, row_sum=1)
+    n, p = size(mat)
+    if n == 0
+        return true
+    end
+    return repeat([row_sum], n) ≈ mat*ones(p)
 end
 
 """
@@ -511,17 +556,11 @@ Diagonal elements are 0.
 The diagonals would have represented the mean recurrence time.
 """
 function mean_first_passage_time(x::AbstractMarkovChain)
-    # println(mean_recurrence_time(x))
-    # D = LinearAlgebra.diagm(mean_recurrence_time(x))
-    # T = transition_matrix(x)
-    # C = ones(eltype(D), size(D)[1], size(D)[2])
-    # M = (LinearAlgebra.I-T)\(C-D)
-
     n = length(state_space(x))
     T = transition_matrix(x)
 
     if n == 0
-        return T
+        return T  # keeps eltype the same
     end
 
     W = repeat(stationary_distribution(x)', n)
@@ -531,14 +570,5 @@ function mean_first_passage_time(x::AbstractMarkovChain)
     M = (Zjj .- Z) ./ W
     return M
 end
-
-# https://cran.r-project.org/web/packages/markovchain/vignettes/an_introduction_to_markovchain_package.pdf
-
-# exit_probabilities
-# first_passage_probabilities
-
-# meanFirstPassageTime
-# meanRecurrenceTime
-# meanAbsorptionTime
 
 end # module

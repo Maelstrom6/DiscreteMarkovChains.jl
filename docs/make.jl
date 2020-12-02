@@ -14,7 +14,14 @@ makedocs(;
     pages=[
         "Home" => "index.md",
         "introduction.md",
-        "functions.md",
+        "Functions" => [
+            "functions/basic.md",
+            "functions/simple.md",
+            "functions/communication.md",
+            "functions/probability.md",
+            "functions/mean.md",
+            "functions/internal.md",
+        ],
     ],
 )
 
