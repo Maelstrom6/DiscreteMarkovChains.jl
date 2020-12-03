@@ -98,11 +98,13 @@ state_space(x::AbstractMarkovChain) = x.state_space
     transition_matrix(x)
 
 # Definitions
-The one-step transition matrix, ``T``, of a Markov chain, ``{X_t}``
+The one-step transition matrix, ``T``, of a Markov chain, ``\\{X_t\\}``
 is a matrix whose ``(i,j)``th entry is the probability of the process
 being in state ``j`` at time 1 given that the process started
 in state ``i`` at time 0. That is
-``T = p^{(1)}_{i,j} = \\mathbb{P}(X_1=j | X_0=i)``.
+```math
+T = p^{(1)}_{i,j} = \\mathbb{P}(X_1=j | X_0=i)
+```.
 
 # Arguments
 - `x`: some kind of Markov chain.

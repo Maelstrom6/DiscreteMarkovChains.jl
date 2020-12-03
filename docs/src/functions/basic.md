@@ -1,5 +1,7 @@
 # Core Types
 
+These are types that are most often used. They are simple and are used by all other functions.
+
 ## Contents
 
 ```@contents
