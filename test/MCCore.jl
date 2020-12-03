@@ -1,9 +1,34 @@
 using DiscreteMarkovChains
 using Test
 
+@testset "Expected Failures" begin
+    # Different lengths
+    @test_throws(
+        ErrorException(
+            "The state space, [1, 2], and "*
+            "transition matrix should be the same size."
+        ),
+        DiscreteMarkovChain([1, 2], [1]),
+    )
+
+    # Repeated elements in the state space
+    @test_throws(
+        ErrorException("The state space, [1, 1], must have unique elements."),
+        DiscreteMarkovChain([1, 1], [1 0; 0 1]),
+    )
+
+    # Not row stochastic
+    @test_throws(
+        ErrorException(
+            "The transition matrix, [0.5 0.6; 1.0 0.0], "*
+            "should be row-stochastic (each row must sum up to 1)."
+        ),
+        DiscreteMarkovChain([1, 2], [0.5 0.6; 1.0 0.0]),
+    )
+end
 
 @testset "Communication Classes" begin
-    # empty test
+    # Empty test
     T = [][:,:]
     X = DiscreteMarkovChain([], T)
     @test periodicities(X) == ([], [], [])
@@ -64,7 +89,7 @@ using Test
 end
 
 @testset "Decompose and Canonical Form" begin
-    # empty test
+    # Empty test
     T = Array{Any}(undef, 0, 0)
     X = DiscreteMarkovChain([], T)
     @test decompose(X) == ([], T, T, T)
@@ -76,7 +101,7 @@ end
     ]
     X = DiscreteMarkovChain(["Sunny", "Cloudy", "Rainy"], T)
     @test decompose(X) == (
-        ["Sunny", "Cloudy", "Rainy"], 
+        ["Sunny", "Cloudy", "Rainy"],
         T[1:1, 1:1], T[2:3, 1:1], T[2:3, 2:3],
     )
     @test canonical_form(X) == (["Sunny", "Cloudy", "Rainy"], T)
@@ -116,7 +141,7 @@ end
 end
 
 @testset "Regular, Ergodic, Absorbing" begin
-    # empty test
+    # Empty test
     T = Array{Any}(undef, 0, 0)
     X = DiscreteMarkovChain([], T)
     @test !is_regular(X)
@@ -166,7 +191,7 @@ end
 end
 
 @testset "Stationary Distribution" begin
-    # empty test
+    # Empty test
     T = Array{Any}(undef, 0, 0)
     X = DiscreteMarkovChain([], T)
     @test stationary_distribution(X) == Any[]
@@ -191,7 +216,7 @@ end
 end
 
 @testset "Fundamental Matrix" begin
-    # empty test
+    # Empty test
     T = Array{Any}(undef, 0, 0)
     X = DiscreteMarkovChain([], T)
     @test fundamental_matrix(X) == Array{Any}(undef, 0, 0)
@@ -213,7 +238,7 @@ end
 end
 
 @testset "Expected Time To Absorption" begin
-    # empty test
+    # Empty test
     T = Array{Any}(undef, 0, 0)
     X = DiscreteMarkovChain([], T)
     @test expected_time_to_absorption(X) == Any[]
@@ -240,7 +265,7 @@ end
 end
 
 @testset "Exit Probability" begin
-    # empty test
+    # Empty test
     T = Array{Any}(undef, 0, 0)
     X = DiscreteMarkovChain([], T)
     @test exit_probabilities(X) == Array{Any}(undef, 0, 0)
@@ -278,7 +303,7 @@ end
 end
 
 @testset "First Passage" begin
-    # empty test
+    # Empty test
     T = Array{Any}(undef, 0, 0)
     X = DiscreteMarkovChain([], T)
     @test first_passage_probabilities(X, 1) == Array{Any}(undef, 0, 0)
@@ -303,7 +328,7 @@ end
 end
 
 @testset "Mean Recurrence Time" begin
-    # empty test
+    # Empty test
     T = Array{Any}(undef, 0, 0)
     X = DiscreteMarkovChain([], T)
     @test mean_recurrence_time(X) == Any[]
@@ -320,7 +345,7 @@ end
 end
 
 @testset "Mean First Passage Time" begin
-    # empty test
+    # Empty test
     T = Array{Any}(undef, 0, 0)
     X = DiscreteMarkovChain([], T)
     @test mean_first_passage_time(X) == Array{Any}(undef, 0, 0)

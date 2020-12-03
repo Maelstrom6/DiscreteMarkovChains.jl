@@ -62,15 +62,19 @@ end
 required_row_sum(::Core.Type{<:AbstractDiscreteMarkovChain}) = 1
 function check(state_space, transition_matrix, type)
     if length(state_space) != size(transition_matrix)[1]
-        error("The state space, $(state_space), and
-        transition matrix should be the same size.")
+        error(
+            "The state space, $(state_space), and "*
+            "transition matrix should be the same size."
+        )
     end
     if length(unique(state_space)) != length(state_space)
         error("The state space, $(state_space), must have unique elements.")
     end
     if !is_row_stochastic(transition_matrix, required_row_sum(type))
-        error("The transition matrix, $(transition_matrix), should be row-stochastic
-        (each row must sum up to $(required_row_sum(type))).")
+        error(
+            "The transition matrix, $(transition_matrix), should be row-stochastic "*
+            "(each row must sum up to $(required_row_sum(type)))."
+        )
     end
 end
 function DiscreteMarkovChain(transition_matrix)
@@ -103,8 +107,9 @@ is a matrix whose ``(i,j)``th entry is the probability of the process
 being in state ``j`` at time 1 given that the process started
 in state ``i`` at time 0. That is
 ```math
-T = p^{(1)}_{i,j} = \\mathbb{P}(X_1=j | X_0=i)
-```.
+T = \\{\\{p^{(1)}_{i,j}\\}\\}_{i,j ∈ S} = \\{\\{\\mathbb{P}(X_1=j | X_0=i)\\}\\}_{i,j ∈ S}
+```
+where ``S`` is the state space of ``\\{X_t\\}``.
 
 # Arguments
 - `x`: some kind of Markov chain.
@@ -154,7 +159,7 @@ The desired sum of each row can be specified as well.
 
 # Definitions
 A matrix is said to be row stochasic if all its rows sum to 1.
-This Definitions is extened so that all its rows sum to `row_sum`.
+This definition is extened so that all its rows sum to `row_sum`.
 
 # Arguments
 - `mat`: a matrix that we want to check.
@@ -177,7 +182,7 @@ end
 # Definitions
 A state ``j`` is accessible from state ``i`` if it is possible
 to eventually reach state ``j`` given that the process started
-in state ``i``. That is ``∃ \\, t ∈ \\mathbb{N}`` such that
+in state ``i``. That is, ``∃ \\, t ∈ \\mathbb{N}`` such that
 ``p^{(t)}_{i,j} > 0``.
 
 States ``i`` and ``j`` communicate if ``i`` is accessible
@@ -702,9 +707,11 @@ end
 A stationary distribution of a Markov chain is a probability distribution
 that remains unchanged in the Markov chain as time progresses.
 It is a row vector, ``w`` such that its elements sum to 1 and it satisfies
-``w'T = w'``. ``T`` is the one-step transiton matrix of the Markov chain.
+``wT = w``. ``T`` is the one-step transiton matrix of the Markov chain.
 
 In other words, ``w`` is invariant by the matrix ``T``.
+
+For simplicity, this function returns a column vector instead of a row vector.
 
 # Arguments
 - `x`: some kind of Markov chain.
@@ -749,7 +756,6 @@ X = DiscreteMarkovChain(T)
 stationary_distribution(X)
 
 # output
-
 
 3-element Array{Float64,1}:
  0.33333333333333337
