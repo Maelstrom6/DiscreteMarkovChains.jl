@@ -62,13 +62,14 @@ end
 required_row_sum(::Core.Type{<:AbstractDiscreteMarkovChain}) = 1
 function check(state_space, transition_matrix, type)
     if length(state_space) != size(transition_matrix)[1]
-        error("The state space and transition matrix should be the same size.")
+        error("The state space, $(state_space), and
+        transition matrix should be the same size.")
     end
     if length(unique(state_space)) != length(state_space)
-        error("The state space must have unique elements.")
+        error("The state space, $(state_space), must have unique elements.")
     end
     if !is_row_stochastic(transition_matrix, required_row_sum(type))
-        error("The transition matrix should be row-stochastic
+        error("The transition matrix, $(transition_matrix), should be row-stochastic
         (each row must sum up to $(required_row_sum(type))).")
     end
 end
@@ -709,6 +710,51 @@ In other words, ``w`` is invariant by the matrix ``T``.
 # Returns
 A column vector, ``w``, that satisfies the equation ``w'T = w'``.
 
+# Examples
+The stationary distribution will always exist. However, it might not be unique.
+
+If it is unique there are no problems.
+```jldoctest stationary_distribution
+using DiscreteMarkovChains
+T = [
+    0.4 0.2 0.4;
+    0.1 0.0 0.9;
+    0.3 0.5 0.2;
+]
+X = DiscreteMarkovChain(T)
+
+stationary_distribution(X)
+
+# output
+
+3-element Array{Float64,1}:
+ 0.27131782945736443
+ 0.27906976744186046
+ 0.44961240310077516
+```
+
+If there are infinite solutions then the principle solution is taken
+(every free variable is set to 0). A Moore-Penrose inverse is used.
+
+```jldoctest stationary_distribution
+T = [
+    0.4 0.6 0.0;
+    0.6 0.4 0.0;
+    0.0 0.0 1.0;
+]
+X = DiscreteMarkovChain(T)
+
+stationary_distribution(X)
+
+# output
+
+
+3-element Array{Float64,1}:
+ 0.33333333333333337
+ 0.33333333333333337
+ 0.33333333333333337
+```
+
 # References
 1. [Brilliant.org](https://brilliant.org/wiki/stationary-distributions/#:~:text=A%20stationary%20distribution%20of%20a,transition%20matrix%20P%2C%20it%20satisfies)
 """
@@ -724,7 +770,19 @@ function stationary_distribution(x::AbstractMarkovChain)
     a[1, :] = ones(n)
     b = zeros(Int, n)
     b[1] = 1
-    return a\b
+    try
+        return a\b
+    catch e
+        # This is a retarded way to handle this specific
+        # exception but I don't know how else to deal with it.
+        if e isa LinearAlgebra.SingularException
+            # The pinv returns floats even if inputs are
+            # rational. We will thus use it as a last resort.
+            return LinearAlgebra.pinv(a)*b
+        else
+            rethrow(e)
+        end
+    end
 end
 
 """
@@ -744,6 +802,44 @@ given that the chain started in state ``i``.
 
 # Returns
 The fundamental matrix of the Markov chain
+
+# Examples
+Here is a typical example of the fundamental matrix.
+```jldoctest fundamental_matrix
+using DiscreteMarkovChains
+T = [
+    1.0 0.0 0.0;
+    0.0 0.4 0.6;
+    0.2 0.2 0.6;
+]
+X = DiscreteMarkovChain(T)
+
+fundamental_matrix(X)
+
+# output
+
+2×2 Array{Float64,2}:
+ 3.33333  5.0
+ 1.66667  5.0
+```
+
+If the chain is ergodic, then the fundamental matrix is a 0x0
+matrix (since there are no transient states).
+
+```jldoctest fundamental_matrix
+T = [
+    0.0 1.0 0.0;
+    0.5 0.0 0.5;
+    0.0 1.0 0.0;
+]
+X = DiscreteMarkovChain(T)
+
+fundamental_matrix(X)
+
+# output
+
+0×0 Array{Any,2}
+```
 """
 function fundamental_matrix(x::AbstractDiscreteMarkovChain)
     states, _, _, C = decompose(x)
@@ -770,10 +866,42 @@ the process started in state ``i``.
 A 1D array where element ``i`` is the total number of revisits to
 transient state ``i`` before leaving the transient super class.
 
-# Note
+# Notes
 It is advised to have `x` in canonical form already.
 This is to avoid confusion of what states make up each
 element of the array ouput.
+
+# Examples
+See the following where we have a chain with 2 transient states
+(states 3 and 4) that go between eachother. One of those states
+will enter a pre-absorbing state (state 2). And then the
+pre-absorbing state will enter the absorbing state (state 1)
+on the next step.
+
+So state 2 should spend no more steps in the transient states
+and hence should have a time to absorption of 0. State 4 should
+have 1 more step than state 3 since state 4
+must enter state 3 to exit the transient states.
+
+```jldoctest expected_time_to_absorption
+using DiscreteMarkovChains
+T = [
+    1.0 0.0 0.0 0.0;
+    1.0 0.0 0.0 0.0;
+    0.0 0.2 0.0 0.8;
+    0.0 0.0 1.0 0.0;
+]
+X = DiscreteMarkovChain(T)
+
+expected_time_to_absorption(X)
+
+# output
+
+3-element Array{Float64,1}:
+  0.0
+  9.000000000000002
+ 10.000000000000002
+```
 """
 function expected_time_to_absorption(x::AbstractDiscreteMarkovChain)
     states, A, B, C = decompose(x)
@@ -792,6 +920,58 @@ end
 An array where element ``(i, j)`` is the probability that transient
 state ``i`` will enter recurrent state ``j`` on its first step
 out of the transient states. That is, ``e_{i,j}``.
+
+# Examples
+The following should be fairly obvious. States 1, 2
+and 3 are the recurrent states and state 4 is the single
+transient state that must enter one of these 3 on the next
+time step. There is no randomness at play here.
+
+```jldoctest exit_probabilities
+using DiscreteMarkovChains
+T = [
+    0.2 0.2 0.6 0.0;
+    0.5 0.4 0.1 0.0;
+    0.6 0.2 0.2 0.0;
+    0.2 0.3 0.5 0.0;
+]
+X = DiscreteMarkovChain(T)
+
+exit_probabilities(X)
+
+# output
+
+1×3 Array{Float64,2}:
+ 0.2  0.3  0.5
+```
+
+So state 4 has probabilities 0.2, 0.3 and 0.5 of reaching
+states 1, 2 and 3 respectively on the first step out of
+the transient states (consisting only of state 4).
+
+The following is less obvious.
+```jldoctest exit_probabilities
+T = [
+    1.0 0.0 0.0 0.0;
+    0.0 1.0 0.0 0.0;
+    0.1 0.3 0.3 0.3;
+    0.2 0.3 0.4 0.1;
+]
+X = DiscreteMarkovChain(T)
+
+exit_probabilities(X)
+
+# output
+
+2×2 Array{Float64,2}:
+ 0.294118  0.705882
+ 0.352941  0.647059
+```
+
+So state 3 has a 29% chance of entering state 1 on the
+first time step out (and the remaining 71% chance of
+entering state 2). State 4 has a 35% chance of reaching
+state 1 on the first time step out.
 """
 function exit_probabilities(x::AbstractDiscreteMarkovChain)
     M = fundamental_matrix(x)
@@ -821,6 +1001,43 @@ libraries want to use this library, it will pose no hassle.
 
 # Returns
 A scalar value or a matrix depending on whether `i` and `j` are given.
+
+# Examples
+```jldoctest first_passage_probabilities
+using DiscreteMarkovChains
+T = [
+    0.1 0.9;
+    0.3 0.7;
+]
+X = DiscreteMarkovChain(T)
+
+first_passage_probabilities(X, 2)
+
+# output
+
+2×2 Array{Float64,2}:
+ 0.27  0.09
+ 0.21  0.27
+```
+
+If `X` has a custom state space,
+then `i` and `j` must be in that state space.
+
+```jldoctest first_passage_probabilities
+T = [
+    0.1 0.9;
+    0.3 0.7;
+]
+X = DiscreteMarkovChain(["Sunny", "Rainy"], T)
+
+first_passage_probabilities(X, 2, "Sunny", "Rainy")
+
+# output
+
+0.09000000000000001
+```
+
+Notice how this is the (1, 2) entry in the first example.
 
 # References
 1. [University of Windsor](https://scholar.uwindsor.ca/cgi/viewcontent.cgi?article=1125&context=major-papers)
@@ -904,8 +1121,49 @@ return to state i given that the process started in state ``i``.
 # Returns
 A 1D array where the ith entry is the mean recurrence time of state ``i``.
 
-# Note
+# Notes
 `x` must be irreducible (i.e. ergodic).
+
+# Examples
+```jldoctest mean_recurrence_time
+using DiscreteMarkovChains
+T = [
+    0.1 0.2 0.7;
+    0.3 0.0 0.7;
+    0.4 0.4 0.2;
+]
+X = DiscreteMarkovChain(T)
+
+mean_recurrence_time(X)
+
+# output
+
+3-element Array{Float64,1}:
+ 3.4615384615384603
+ 4.090909090909091
+ 2.1428571428571432
+```
+
+If we have a reducible chain, then no error will be
+raised but the output will be nonsense.
+
+```jldoctest mean_recurrence_time
+T = [
+    1.0 0.0 0.0;
+    0.1 0.5 0.4;
+    0.0 0.3 0.7;
+]
+X = DiscreteMarkovChain(T)
+
+mean_recurrence_time(X)
+
+# output
+
+3-element Array{Float64,1}:
+   1.0
+ -Inf
+ -Inf
+```
 """
 function mean_recurrence_time(x::AbstractMarkovChain)
     return 1 ./ stationary_distribution(x)
@@ -917,6 +1175,7 @@ end
 # Definitions
 This is the expected number of steps for the process to
 reach state ``j`` given that the process started in state ``i``.
+We say that the mean first passage time between a state and itself is 0.
 
 # Arguments
 - `x`: some kind of Markov chain.
@@ -925,6 +1184,50 @@ reach state ``j`` given that the process started in state ``i``.
 A matrix where the ``(i,j)``th entry is the mean recurrence time of state ``i``.
 Diagonal elements are 0.
 The diagonals would have represented the mean recurrence time.
+
+# Notes
+`x` must be irreducible (i.e. ergodic).
+
+# Examples
+```jldoctest mean_first_passage_time
+using DiscreteMarkovChains
+T = [
+    0.1 0.2 0.7;
+    0.3 0.0 0.7;
+    0.4 0.4 0.2;
+]
+X = DiscreteMarkovChain(T)
+
+mean_first_passage_time(X)
+
+# output
+
+3×3 Array{Float64,2}:
+ 0.0      3.40909  1.42857
+ 2.88462  0.0      1.42857
+ 2.69231  2.95455  0.0
+```
+
+If we have a reducible chain, then no error will be
+raised but the output will be nonsense.
+
+```jldoctest mean_first_passage_time
+T = [
+    1.0 0.0 0.0;
+    0.1 0.5 0.4;
+    0.0 0.3 0.7;
+]
+X = DiscreteMarkovChain(T)
+
+mean_first_passage_time(X)
+
+# output
+
+3×3 Array{Float64,2}:
+  0.0     -Inf  -Inf
+ 23.3333  NaN   -Inf
+ 26.6667  -Inf  NaN
+```
 """
 function mean_first_passage_time(x::AbstractMarkovChain)
     n = length(state_space(x))
