@@ -717,20 +717,20 @@ If it is unique there are no problems.
 ```jldoctest stationary_distribution
 using DiscreteMarkovChains
 T = [
-    0.4 0.2 0.4;
-    0.1 0.0 0.9;
-    0.3 0.5 0.2;
-]
+    4 2 4;
+    1 0 9;
+    3 5 2;
+]//10
 X = DiscreteMarkovChain(T)
 
 stationary_distribution(X)
 
 # output
 
-3-element Array{Float64,1}:
- 0.27131782945736443
- 0.27906976744186046
- 0.44961240310077516
+3-element Array{Rational{Int64},1}:
+ 35//129
+ 12//43
+ 58//129
 ```
 
 If there are infinite solutions then the principle solution is taken
