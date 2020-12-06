@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Probability Functions · DiscreteMarkovChains.jl</title><link rel="canonical" href="https://Maelstrom6.github.io/DiscreteMarkovChains.jl/functions/probability/"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">DiscreteMarkovChains.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Functions</span><ul><li><a class="tocitem" href="../basic/">Core Types</a></li><li><a class="tocitem" href="../simple/">Boolean Functions</a></li><li><a class="tocitem" href="../communication/">Communication Functions</a></li><li class="is-active"><a class="tocitem" href>Probability Functions</a><ul class="internal"><li><a class="tocitem" href="#Contents"><span>Contents</span></a></li><li><a class="tocitem" href="#Index"><span>Index</span></a></li><li><a class="tocitem" href="#Documentation"><span>Documentation</span></a></li></ul></li><li><a class="tocitem" href="../mean/">Mean Time Functions</a></li><li><a class="tocitem" href="../internal/">Internal Functions</a></li></ul></li><li><a class="tocitem" href="../../contributing/">Contributing</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Functions</a></li><li class="is-active"><a href>Probability Functions</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Probability Functions</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/Maelstrom6/DiscreteMarkovChains.jl/blob/master/docs/src/functions/probability.md#L" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Probability-Functions"><a class="docs-heading-anchor" href="#Probability-Functions">Probability Functions</a><a id="Probability-Functions-1"></a><a class="docs-heading-anchor-permalink" href="#Probability-Functions" title="Permalink"></a></h1><p>These functions provide probability scalars, vectors or scalars as output.</p><h2 id="Contents"><a class="docs-heading-anchor" href="#Contents">Contents</a><a id="Contents-1"></a><a class="docs-heading-anchor-permalink" href="#Contents" title="Permalink"></a></h2><ul><li><a href="#Probability-Functions">Probability Functions</a></li><ul><li><a href="#Contents">Contents</a></li><li><a href="#Index">Index</a></li><li><a href="#Documentation">Documentation</a></li></ul></ul><h2 id="Index"><a class="docs-heading-anchor" href="#Index">Index</a><a id="Index-1"></a><a class="docs-heading-anchor-permalink" href="#Index" title="Permalink"></a></h2><ul><li><a href="#DiscreteMarkovChains.exit_probabilities"><code>DiscreteMarkovChains.exit_probabilities</code></a></li><li><a href="#DiscreteMarkovChains.first_passage_probabilities"><code>DiscreteMarkovChains.first_passage_probabilities</code></a></li><li><a href="#DiscreteMarkovChains.stationary_distribution"><code>DiscreteMarkovChains.stationary_distribution</code></a></li></ul><h2 id="Documentation"><a class="docs-heading-anchor" href="#Documentation">Documentation</a><a id="Documentation-1"></a><a class="docs-heading-anchor-permalink" href="#Documentation" title="Permalink"></a></h2><article class="docstring"><header><a class="docstring-binding" id="DiscreteMarkovChains.stationary_distribution" href="#DiscreteMarkovChains.stationary_distribution"><code>DiscreteMarkovChains.stationary_distribution</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">stationary_distribution(x)</code></pre><p><strong>Definitions</strong></p><p>A stationary distribution of a Markov chain is a probability distribution that remains unchanged in the Markov chain as time progresses. It is a row vector, <span>$w$</span> such that its elements sum to 1 and it satisfies <span>$wT = w$</span>. <span>$T$</span> is the one-step transiton matrix of the Markov chain.</p><p>In other words, <span>$w$</span> is invariant by the matrix <span>$T$</span>.</p><p>For simplicity, this function returns a column vector instead of a row vector.</p><p><strong>Arguments</strong></p><ul><li><code>x</code>: some kind of Markov chain.</li></ul><p><strong>Returns</strong></p><p>A column vector, <span>$w$</span>, that satisfies the equation <span>$w&#39;T = w&#39;$</span>.</p><p><strong>Examples</strong></p><p>The stationary distribution will always exist. However, it might not be unique.</p><p>If it is unique there are no problems.</p><pre><code class="language-julia">using DiscreteMarkovChains
+T = [
+    4 2 4;
+    1 0 9;
+    3 5 2;
+]//10
+X = DiscreteMarkovChain(T)
+
+stationary_distribution(X)
+
+# output
+
+3-element Array{Rational{Int64},1}:
+ 35//129
+ 12//43
+ 58//129</code></pre><p>If there are infinite solutions then the principle solution is taken (every free variable is set to 0). A Moore-Penrose inverse is used.</p><pre><code class="language-julia">T = [
+    0.4 0.6 0.0;
+    0.6 0.4 0.0;
+    0.0 0.0 1.0;
+]
+X = DiscreteMarkovChain(T)
+
+stationary_distribution(X)
+
+# output
+
+3-element Array{Float64,1}:
+ 0.33333333333333337
+ 0.33333333333333337
+ 0.33333333333333337</code></pre><p><strong>References</strong></p><ol><li><a href="https://brilliant.org/wiki/stationary-distributions/#:~:text=A%20stationary%20distribution%20of%20a,transition%20matrix%20P%2C%20it%20satisfies">Brilliant.org</a></li></ol></div><a class="docs-sourcelink" target="_blank" href="https://github.com/Maelstrom6/DiscreteMarkovChains.jl/blob/beefd8c558c588556551b414ea4a0eb530f94ffc/src/DiscreteMarkovChains.jl#LL703-L768">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="DiscreteMarkovChains.exit_probabilities" href="#DiscreteMarkovChains.exit_probabilities"><code>DiscreteMarkovChains.exit_probabilities</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">exit_probabilities(x)</code></pre><p><strong>Arguments</strong></p><ul><li><code>x</code>: some kind of Markov chain.</li></ul><p><strong>Returns</strong></p><p>An array where element <span>$(i, j)$</span> is the probability that transient state <span>$i$</span> will enter recurrent state <span>$j$</span> on its first step out of the transient states. That is, <span>$e_{i,j}$</span>.</p><p><strong>Examples</strong></p><p>The following should be fairly obvious. States 1, 2 and 3 are the recurrent states and state 4 is the single transient state that must enter one of these 3 on the next time step. There is no randomness at play here.</p><pre><code class="language-julia">using DiscreteMarkovChains
+T = [
+    0.2 0.2 0.6 0.0;
+    0.5 0.4 0.1 0.0;
+    0.6 0.2 0.2 0.0;
+    0.2 0.3 0.5 0.0;
+]
+X = DiscreteMarkovChain(T)
+
+exit_probabilities(X)
+
+# output
+
+1×3 Array{Float64,2}:
+ 0.2  0.3  0.5</code></pre><p>So state 4 has probabilities 0.2, 0.3 and 0.5 of reaching states 1, 2 and 3 respectively on the first step out of the transient states (consisting only of state 4).</p><p>The following is less obvious.</p><pre><code class="language-julia">T = [
+    1.0 0.0 0.0 0.0;
+    0.0 1.0 0.0 0.0;
+    0.1 0.3 0.3 0.3;
+    0.2 0.3 0.4 0.1;
+]
+X = DiscreteMarkovChain(T)
+
+exit_probabilities(X)
+
+# output
+
+2×2 Array{Float64,2}:
+ 0.294118  0.705882
+ 0.352941  0.647059</code></pre><p>So state 3 has a 29% chance of entering state 1 on the first time step out (and the remaining 71% chance of entering state 2). State 4 has a 35% chance of reaching state 1 on the first time step out.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/Maelstrom6/DiscreteMarkovChains.jl/blob/beefd8c558c588556551b414ea4a0eb530f94ffc/src/DiscreteMarkovChains.jl#LL921-L983">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="DiscreteMarkovChains.first_passage_probabilities" href="#DiscreteMarkovChains.first_passage_probabilities"><code>DiscreteMarkovChains.first_passage_probabilities</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">first_passage_probabilities(x, t, i=missing, j=missing)</code></pre><p><strong>Definitions</strong></p><p>This is the probability that the process enters state <span>$j$</span> for the first time at time <span>$t$</span> given that the process started in state <span>$i$</span> at time 0. That is, <span>$f^{(t)}_{i,j}$</span>. If no <code>i</code> or <code>j</code> is given, then it will return a matrix instead with entries <span>$f^{(t)}_{i,j}$</span> for <code>i</code> and <code>j</code> in the state space of <code>x</code>.</p><p><strong>Why Do We Use A Slow Algorithm?</strong></p><p>So that <code>t</code> can be symbolic if nessesary. That is, if symbolic math libraries want to use this library, it will pose no hassle.</p><p><strong>Arguments</strong></p><ul><li><code>x</code>: some kind of Markov chain.</li><li><code>t</code>: the time to calculate the first passage probability.</li><li><code>i</code>: the state that the prcess starts in.</li><li><code>j</code>: the state that the process must reach for the first time.</li></ul><p><strong>Returns</strong></p><p>A scalar value or a matrix depending on whether <code>i</code> and <code>j</code> are given.</p><p><strong>Examples</strong></p><pre><code class="language-julia">using DiscreteMarkovChains
+T = [
+    0.1 0.9;
+    0.3 0.7;
+]
+X = DiscreteMarkovChain(T)
+
+first_passage_probabilities(X, 2)
+
+# output
+
+2×2 Array{Float64,2}:
+ 0.27  0.09
+ 0.21  0.27</code></pre><p>If <code>X</code> has a custom state space, then <code>i</code> and <code>j</code> must be in that state space.</p><pre><code class="language-julia">T = [
+    0.1 0.9;
+    0.3 0.7;
+]
+X = DiscreteMarkovChain([&quot;Sunny&quot;, &quot;Rainy&quot;], T)
+
+first_passage_probabilities(X, 2, &quot;Sunny&quot;, &quot;Rainy&quot;)
+
+# output
+
+0.09000000000000001</code></pre><p>Notice how this is the (1, 2) entry in the first example.</p><p><strong>References</strong></p><ol><li><a href="https://scholar.uwindsor.ca/cgi/viewcontent.cgi?article=1125&amp;context=major-papers">University of Windsor</a></li><li><a href="http://maths.dur.ac.uk/stats/courses/ProbMC2H/_files/handouts/1516MarkovChains2H.pdf">Durham University</a></li></ol></div><a class="docs-sourcelink" target="_blank" href="https://github.com/Maelstrom6/DiscreteMarkovChains.jl/blob/beefd8c558c588556551b414ea4a0eb530f94ffc/src/DiscreteMarkovChains.jl#LL990-L1053">source</a></section></article></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../communication/">« Communication Functions</a><a class="docs-footer-nextpage" href="../mean/">Mean Time Functions »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Sunday 6 December 2020 09:02">Sunday 6 December 2020</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
