@@ -22,4 +22,5 @@ The main type is `DiscreteMarkovChain`:
 DiscreteMarkovChains.DiscreteMarkovChain
 DiscreteMarkovChains.state_space
 DiscreteMarkovChains.transition_matrix
+DiscreteMarkovChains.probability_matrix
 ```

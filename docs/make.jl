@@ -21,6 +21,7 @@ makedocs(;
             "functions/mean.md",
             "functions/internal.md",
         ],
+        "continuous.md",
         "contributing.md",
     ],
 )
