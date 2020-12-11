@@ -12,6 +12,7 @@ The overall style used it the [Blue style guide](https://github.com/invenia/Blue
 1. Instead of leading underscores for names of private functions, we keep them as is. For example `is_row_stochastic` should be called `_is_row_stochastic` under the Blue style guide. This function is simply not exported. Since Julia allows for massive code reuse, there is a chance that a developer might want to make use of our private functions (which are actually more useful than the public ones for this package).
 2. We will implicitly `return nothing` in functions. The Blue style guide requires this to be explicit. This is to make code look cleaner.
 3. Inline comments that do not form a full sentence can start with a small letter or a capital letter. They must not end with a full stop. This is to match with the Blue style guide and with Julia's source code itself.
+4. URLs do not need to adhere to the 92-character line-limit.
 
 ## Additions To Blue
 

@@ -69,10 +69,12 @@ end
     characteristic_matrix(::AbstractContinuousMarkovChain)
 
 # Definitions
-Many derivations and interesting ideas about . Most of the
-time, the identity matrix appears more often in discrete
-Markov chains. Instead of the identity matrix, the zero
-matrix appears in its place for continuous Markov chains.
+Many derivations and interesting ideas about Markov chains
+involve the identity matrix or zero matrix somewhere along
+the line. Most of the time, the identity matrix appears
+more often in discrete Markov chains. Instead of the identity
+matrix, the zero matrix appears in its place for continuous
+Markov chains.
 
 # Returns
 The identity matrix if its argument is an instance of

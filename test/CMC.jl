@@ -256,3 +256,31 @@ end
     X = ContinuousMarkovChain(T)
     @test expected_time_to_absorption(X) == [0.25, 0.75]
 end
+
+@testset "Exit Probability" begin
+    # Empty test
+    T = Array{Any}(undef, 0, 0)
+    X = DiscreteMarkovChain([], T)
+    @test exit_probabilities(X) == Array{Any}(undef, 0, 0)
+end
+
+@testset "First Passage" begin
+    # Empty test
+    T = Array{Any}(undef, 0, 0)
+    X = DiscreteMarkovChain([], T)
+    @test first_passage_probabilities(X, 1) == Array{Any}(undef, 0, 0)
+end
+
+@testset "Mean Recurrence Time" begin
+    # Empty test
+    T = Array{Any}(undef, 0, 0)
+    X = DiscreteMarkovChain([], T)
+    @test mean_recurrence_time(X) == Any[]
+end
+
+@testset "Mean First Passage Time" begin
+    # Empty test
+    T = Array{Any}(undef, 0, 0)
+    X = DiscreteMarkovChain([], T)
+    @test mean_first_passage_time(X) == Array{Any}(undef, 0, 0)
+end
