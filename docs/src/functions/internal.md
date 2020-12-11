@@ -26,4 +26,7 @@ DiscreteMarkovChains.digraph
 
 DiscreteMarkovChains.state_index
 DiscreteMarkovChains.is_row_stochastic
+
+DiscreteMarkovChains.required_row_sum
+DiscreteMarkovChains.characteristic_matrix
 ```

@@ -72,6 +72,24 @@ The one-step probability matrix of the Markov chain.
 probability_matrix(x::AbstractMarkovChain) = x.transition_matrix
 
 """
+    embedded(x)
+
+# Arguments
+- `x`: some kind of Markov chain.
+
+# Returns
+If the Markv chain is continuous, then it returns the
+embedded Markov chain. If the Markov chain is discrete,
+then it returns the given chain, `x`.
+
+# Notes
+If the equivalent chain is preffered rather than the
+embedded chain, then use `DiscreteMarkovChain(x)`.
+
+"""
+embedded(x::AbstractMarkovChain) = x
+
+"""
     state_index(x)
 
 # Arguments
@@ -497,6 +515,14 @@ function is_absorbing(x::AbstractMarkovChain)
     return (r > 0) && (LinearAlgebra.diag(A) ≈ repeat([required_row_sum(typeof(x))], r))
 end
 
+function is_reversible(x::AbstractMarkovChain)
+    T = transition_matrix(x)
+    l = stationary_distribution(x)
+    L = repeat([l], size(T)[1])'
+
+    return L.*T ≈ L.*T'
+end
+
 """
     stationary_distribution(x)
 
@@ -591,6 +617,204 @@ function stationary_distribution(x::AbstractMarkovChain)
             rethrow(e)
         end
     end
+end
+
+"""
+    fundamental_matrix(x)
+
+# Definitions
+The fundamental matrix of a markov chain is defined to be ``(I-C)^{-1}``
+where ``C`` is the sub-transition matrix that takes transient states
+to transient states.
+
+The ``(i, j)``th entry of the fundamental matrix is the expected
+number of times the chain is in state ``j`` over the whole process
+given that the chain started in state ``i``.
+
+# Arguments
+- `x`: some kind of Markov chain.
+
+# Returns
+The fundamental matrix of the Markov chain.
+
+# Notes
+It is advised to have `x` in canonical form already.
+This is to avoid confusion of what states make up each
+element of the array ouput.
+
+# Examples
+Here is a typical example of the fundamental matrix.
+```jldoctest fundamental_matrix
+using DiscreteMarkovChains
+T = [
+    1.0 0.0 0.0;
+    0.0 0.4 0.6;
+    0.2 0.2 0.6;
+]
+X = DiscreteMarkovChain(T)
+
+fundamental_matrix(X)
+
+# output
+
+2×2 Array{Float64,2}:
+ 3.33333  5.0
+ 1.66667  5.0
+```
+
+If the chain is ergodic, then the fundamental matrix is a 0x0
+matrix (since there are no transient states).
+
+```jldoctest fundamental_matrix
+T = [
+    0.0 1.0 0.0;
+    0.5 0.0 0.5;
+    0.0 1.0 0.0;
+]
+X = DiscreteMarkovChain(T)
+
+fundamental_matrix(X)
+
+# output
+
+0×0 Array{Any,2}
+```
+"""
+function fundamental_matrix(x::AbstractMarkovChain)
+    _, _, _, C = decompose(x)
+
+    if size(C)[1] == 0
+        return Array{Any}(undef, 0, 0)
+    end
+
+    return LinearAlgebra.inv(characteristic_matrix(x) - C)
+end
+
+"""
+    expected_time_to_absorption(x)
+
+# Definitions
+The expected time to absorption is the expected number of steps that
+the process will take while in the transient super class given that
+the process started in state ``i``.
+
+# Arguments
+- `x`: some kind of Markov chain.
+
+# Returns
+A 1D array where element ``i`` is the total number of revisits to
+transient state ``i`` before leaving the transient super class.
+
+# Notes
+It is advised to have `x` in canonical form already.
+This is to avoid confusion of what states make up each
+element of the array ouput.
+
+# Examples
+See the following where we have a chain with 2 transient states
+(states 3 and 4) that go between eachother. One of those states
+will enter a pre-absorbing state (state 2). And then the
+pre-absorbing state will enter the absorbing state (state 1)
+on the next step.
+
+So state 2 should spend no more steps in the transient states
+and hence should have a time to absorption of 0. State 4 should
+have 1 more step than state 3 since state 4
+must enter state 3 to exit the transient states.
+
+```jldoctest expected_time_to_absorption
+using DiscreteMarkovChains
+T = [
+    1.0 0.0 0.0 0.0;
+    1.0 0.0 0.0 0.0;
+    0.0 0.2 0.0 0.8;
+    0.0 0.0 1.0 0.0;
+]
+X = DiscreteMarkovChain(T)
+
+expected_time_to_absorption(X)
+
+# output
+
+3-element Array{Float64,1}:
+  0.0
+  9.000000000000002
+ 10.000000000000002
+```
+"""
+function expected_time_to_absorption(x::AbstractMarkovChain)
+    M = fundamental_matrix(x)
+    EV = (M-characteristic_matrix(x)) * ones(Int, size(M)[1])
+    return EV
+end
+
+"""
+    exit_probabilities(x)
+
+# Arguments
+- `x`: some kind of Markov chain.
+
+# Returns
+An array where element ``(i, j)`` is the probability that transient
+state ``i`` will enter recurrent state ``j`` on its first step
+out of the transient states. That is, ``e_{i,j}``.
+
+# Examples
+The following should be fairly obvious. States 1, 2
+and 3 are the recurrent states and state 4 is the single
+transient state that must enter one of these 3 on the next
+time step. There is no randomness at play here.
+
+```jldoctest exit_probabilities
+using DiscreteMarkovChains
+T = [
+    0.2 0.2 0.6 0.0;
+    0.5 0.4 0.1 0.0;
+    0.6 0.2 0.2 0.0;
+    0.2 0.3 0.5 0.0;
+]
+X = DiscreteMarkovChain(T)
+
+exit_probabilities(X)
+
+# output
+
+1×3 Array{Float64,2}:
+ 0.2  0.3  0.5
+```
+
+So state 4 has probabilities 0.2, 0.3 and 0.5 of reaching
+states 1, 2 and 3 respectively on the first step out of
+the transient states (consisting only of state 4).
+
+The following is less obvious.
+```jldoctest exit_probabilities
+T = [
+    1.0 0.0 0.0 0.0;
+    0.0 1.0 0.0 0.0;
+    0.1 0.3 0.3 0.3;
+    0.2 0.3 0.4 0.1;
+]
+X = DiscreteMarkovChain(T)
+
+exit_probabilities(X)
+
+# output
+
+2×2 Array{Float64,2}:
+ 0.294118  0.705882
+ 0.352941  0.647059
+```
+
+So state 3 has a 29% chance of entering state 1 on the
+first time step out (and the remaining 71% chance of
+entering state 2). State 4 has a 35% chance of reaching
+state 1 on the first time step out.
+"""
+function exit_probabilities(x::AbstractMarkovChain)
+    M = fundamental_matrix(x)
+    states, A, B, C = decompose(embedded(x))
+    return M * B
 end
 
 """

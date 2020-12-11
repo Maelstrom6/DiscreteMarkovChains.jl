@@ -187,7 +187,6 @@ end
     @test is_regular(X)
     @test is_ergodic(X)
     @test !is_absorbing(X)
-
 end
 
 @testset "Stationary Distribution" begin

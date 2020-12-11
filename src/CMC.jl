@@ -3,6 +3,7 @@ abstract type AbstractContinuousMarkovChain <: AbstractMarkovChain end
 """
     ContinuousMarkovChain(transition_matrix)
     ContinuousMarkovChain(state_space, transition_matrix)
+    ContinuousMarkovChain(discrete_markov_chain)
 
 Creates a new continuous Markov chain object.
 This is also known as a Markov jump process.
@@ -14,15 +15,16 @@ exists, is unique and is equal to the limiting distribution.
 # Arguments
 - `state_space`: The names of the states that make up the Markov chain.
 - `transition_matrix`: The transition intensity matrix. Also known as the generator matrix.
+- `discrete_markov_chain`: An instance of `DiscreteMarkovChain`.
 
 # Examples
 The following shows a basic Sunny-Cloudy-Rainy weather model.
 ```jldoctest ContinuousMarkovChain
 using DiscreteMarkovChains
 T = [
-    -.1 0.1 0;
+    -.1 0.1 0.0;
     0.5 -.8 0.3;
-    0.1 0.4 -.5
+    0.1 0.4 -.5;
 ]
 X = ContinuousMarkovChain(["Sunny", "Cloudy", "Rainy"], T)
 println(state_space(X))
@@ -57,8 +59,8 @@ function ContinuousMarkovChain(transition_matrix)
     return ContinuousMarkovChain(1:(size(transition_matrix)[1]), transition_matrix)
 end
 
-function characteristic_matrix(x::AbstractContinuousMarkovChain)
-    return zeros(Int, size(transition_matrix(x))...)
+function characteristic_matrix(::AbstractContinuousMarkovChain)
+    return LinearAlgebra.UniformScaling(0)
 end
 
 probability_matrix(x::AbstractContinuousMarkovChain) = exp(transition_matrix(x))
@@ -69,7 +71,13 @@ convert(
 ) = ContinuousMarkovChain(x)
 function ContinuousMarkovChain(x::AbstractDiscreteMarkovChain)
     S = state_space(x)
-    Q = log(transition_matrix(x))
+    T = transition_matrix(x)
+
+    if length(S) == 0
+        return ContinuousMarkovChain(S, T)
+    end
+
+    Q = log(T)
     return ContinuousMarkovChain(S, Q)
 end
 
@@ -79,24 +87,16 @@ convert(
 ) = DiscreteMarkovChain(x)
 function DiscreteMarkovChain(x::AbstractContinuousMarkovChain)
     S = state_space(x)
-    T = exp(transition_matrix(x))
+    Q = transition_matrix(x)
+
+    if length(S) == 0
+        return DiscreteMarkovChain(S, Q)
+    end
+
+    T = exp(Q)
     return DiscreteMarkovChain(S, T)
 end
 
-"""
-    embedded(x)
-
-# Arguments
-- `x`: some kind of continuous Markov chain.
-
-# Returns
-The embedded Markov chain for the given continuous Markov chain.
-
-# Notes
-If the equivalent chain is preffered rather than the
-embedded chain, then use `DiscreteMarkovChain(x)`.
-
-"""
 function embedded(x::AbstractContinuousMarkovChain)
     Q = transition_matrix(x)
 
@@ -106,15 +106,3 @@ function embedded(x::AbstractContinuousMarkovChain)
 
     return DiscreteMarkovChain(state_space(x), T)
 end
-
-# function fundamental_matrix(x::AbstractContinuousMarkovChain)
-#     return fundamental_matrix(DiscreteMarkovChain(x))
-# end
-
-# function expected_time_to_absorption(x::AbstractContinuousMarkovChain)
-#     return expected_time_to_absorption(DiscreteMarkovChain(x))
-# end
-
-# function exit_probabilities(x::AbstractContinuousMarkovChain)
-#     return exit_probabilities(DiscreteMarkovChain(x))
-# end
