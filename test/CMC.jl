@@ -43,9 +43,24 @@ end
 @testset "Embedded Chains" begin
     # Empty test
     T = [][:,:]
-    X = DiscreteMarkovChain(T)
+    X = ContinuousMarkovChain(T)
     @test embedded(X) == DiscreteMarkovChain(T)
 
+    X = DiscreteMarkovChain(T)
+    @test embedded(X) == X
+
+    T = [
+        -2 1 1;
+        1 -1 0;
+        2 3 -5;
+    ]
+    X = ContinuousMarkovChain(T)
+    desired_new_matrix = [
+        0 0.5 0.5;
+        1 0 0;
+        0.4 0.6 0;
+    ]
+    @test transition_matrix(embedded(X)) ≈ desired_new_matrix
 end
 
 @testset "Communication Classes" begin
@@ -246,7 +261,7 @@ end
     # Empty test
     T = Array{Any}(undef, 0, 0)
     X = ContinuousMarkovChain([], T)
-    @test expected_time_to_absorption(X) == Any[]
+    @test mean_time_to_absorption(X) == Any[]
 
     T = [
         0 0 0;
@@ -254,33 +269,82 @@ end
         0 2 -2;
     ]
     X = ContinuousMarkovChain(T)
-    @test expected_time_to_absorption(X) == [0.25, 0.75]
+    @test mean_time_to_absorption(X) == [0.25, 0.75]
 end
 
 @testset "Exit Probability" begin
     # Empty test
     T = Array{Any}(undef, 0, 0)
-    X = DiscreteMarkovChain([], T)
+    X = ContinuousMarkovChain([], T)
     @test exit_probabilities(X) == Array{Any}(undef, 0, 0)
-end
 
-@testset "First Passage" begin
-    # Empty test
-    T = Array{Any}(undef, 0, 0)
-    X = DiscreteMarkovChain([], T)
-    @test first_passage_probabilities(X, 1) == Array{Any}(undef, 0, 0)
+    T = [
+        0 0 0;
+        0 -1 1;
+        2 2 -4;
+    ]
+    X = ContinuousMarkovChain(T)
+    @test exit_probabilities(X) == [1; 1][:, :]
+
+    T = [
+        0 0 0;
+        0 0 0;
+        8 8 -16;
+    ]
+    X = ContinuousMarkovChain(T)
+    @test exit_probabilities(X) == [0.5 0.5]
 end
 
 @testset "Mean Recurrence Time" begin
     # Empty test
     T = Array{Any}(undef, 0, 0)
-    X = DiscreteMarkovChain([], T)
+    X = ContinuousMarkovChain([], T)
     @test mean_recurrence_time(X) == Any[]
+
+    T = [
+        -1 1 0;
+        0 -1 1;
+        1 0 -1;
+    ]
+    X = ContinuousMarkovChain(T)
+    @test mean_recurrence_time(X) == [3, 3, 3]
+
+    T = [
+        -1 1 0;
+        0 -1 1;
+        2 2 -4;
+    ]
+    X = ContinuousMarkovChain(T)
+    @test mean_recurrence_time(X) == [3.5, 1.75, 1.75]
 end
 
 @testset "Mean First Passage Time" begin
     # Empty test
     T = Array{Any}(undef, 0, 0)
-    X = DiscreteMarkovChain([], T)
+    X = ContinuousMarkovChain([], T)
     @test mean_first_passage_time(X) == Array{Any}(undef, 0, 0)
+
+    T = [
+        -1 1 0;
+        0 -1 1;
+        1 0 -1;
+    ]
+    X = ContinuousMarkovChain(T)
+    @test mean_first_passage_time(X) == [
+        0.0 1.0 2.0;
+        2.0 0.0 1.0;
+        1.0 2.0 0.0;
+    ]
+
+    T = [
+        -1 1 0;
+        0 -1 1;
+        2 2 -4;
+    ]
+    X = ContinuousMarkovChain(T)
+    @test mean_first_passage_time(X) == [
+        0.0 1.0 2.0;
+        2.5 0.0 1.0;
+        1.5 0.75 0.0;
+    ]
 end

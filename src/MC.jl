@@ -691,7 +691,7 @@ function fundamental_matrix(x::AbstractMarkovChain)
 end
 
 """
-    expected_time_to_absorption(x)
+    mean_time_to_absorption(x)
 
 # Definitions
 The expected time to absorption is the expected number of steps that
@@ -722,7 +722,7 @@ and hence should have a time to absorption of 0. State 4 should
 have 1 more step than state 3 since state 4
 must enter state 3 to exit the transient states.
 
-```jldoctest expected_time_to_absorption
+```jldoctest mean_time_to_absorption
 using DiscreteMarkovChains
 T = [
     1.0 0.0 0.0 0.0;
@@ -732,7 +732,7 @@ T = [
 ]
 X = DiscreteMarkovChain(T)
 
-expected_time_to_absorption(X)
+mean_time_to_absorption(X)
 
 # output
 
@@ -742,7 +742,7 @@ expected_time_to_absorption(X)
  10.000000000000002
 ```
 """
-function expected_time_to_absorption(x::AbstractMarkovChain)
+function mean_time_to_absorption(x::AbstractMarkovChain)
     M = fundamental_matrix(x)
     EV = (M-characteristic_matrix(x)) * ones(Int, size(M)[1])
     return EV
@@ -813,7 +813,7 @@ state 1 on the first time step out.
 """
 function exit_probabilities(x::AbstractMarkovChain)
     M = fundamental_matrix(x)
-    states, A, B, C = decompose(embedded(x))
+    states, A, B, C = decompose(x)
     return M * B
 end
 
@@ -940,12 +940,11 @@ mean_first_passage_time(X)
 """
 function mean_first_passage_time(x::AbstractMarkovChain)
     n = length(state_space(x))
-    T = probability_matrix(x)
-
     if n == 0
-        return T  # Keeps eltype the same
+        return transition_matrix(x)  # Keeps eltype the same
     end
 
+    T = probability_matrix(x)
     W = repeat(stationary_distribution(x)', n)
     Z = LinearAlgebra.inv(LinearAlgebra.I - T + W)
     Zjj = repeat(LinearAlgebra.diag(Z)', n)

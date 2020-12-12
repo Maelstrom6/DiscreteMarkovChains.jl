@@ -100,9 +100,65 @@ end
 function embedded(x::AbstractContinuousMarkovChain)
     Q = transition_matrix(x)
 
-    diag_Q_inv = LinearAlgebra.diagm(1 ./ LinearAlgebra.diag(Q))
+    if size(Q)[1] == 0
+        return DiscreteMarkovChain(state_space(x), Q)
+    end
+
+    D = LinearAlgebra.diag(Q)
+    diag_Q_inv = LinearAlgebra.diagm(1 ./ D)
     T = -diag_Q_inv*Q
     T[LinearAlgebra.diagind(T)] .= 0  # Sometimes NaNs appear
+    T[T .=== NaN] .= 0
+
+    for row in 1:(size(Q)[1])
+        if D[row] == 0
+            T[row, :] .= 0
+            T[row, row] = 1
+        end
+    end
 
     return DiscreteMarkovChain(state_space(x), T)
+end
+
+function mean_recurrence_time(x::AbstractContinuousMarkovChain)
+    Q = transition_matrix(x)
+    T = transition_matrix(embedded(x))
+    n = size(Q)[1]
+    result = []
+
+    for state in 1:n
+        new_mat = copy(Q)
+        new_mat[state, :] .= 0
+        y = ContinuousMarkovChain(new_mat)
+        states, _, _, _ = decompose(embedded(y))
+
+        lag = -1/Q[state, state]
+        values = mean_time_to_absorption(y)
+        probabilities = T[state, setdiff(states, [state])]
+
+        push!(result, lag+(values'*probabilities)[1, 1])
+    end
+
+    return result
+end
+
+function mean_first_passage_time(x::AbstractContinuousMarkovChain)
+    Q = transition_matrix(x)
+    n = size(Q)[1]
+    result = Array{Any}(undef, n, n)
+
+    for state in 1:n
+        new_mat = copy(Q)
+        new_mat[state, :] .= 0
+        y = ContinuousMarkovChain(new_mat)
+        states, _, _, _ = decompose(embedded(y))
+
+        values = mean_time_to_absorption(y)
+
+        result[setdiff(states, [state]), state] = values
+    end
+
+    result[LinearAlgebra.diagind(result)] .= 0
+
+    return result
 end

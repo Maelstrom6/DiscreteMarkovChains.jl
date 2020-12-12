@@ -18,7 +18,7 @@ Pages = ["mean.md"]
 
 ```@docs
 DiscreteMarkovChains.fundamental_matrix
-DiscreteMarkovChains.expected_time_to_absorption
+DiscreteMarkovChains.mean_time_to_absorption
 DiscreteMarkovChains.mean_recurrence_time
 DiscreteMarkovChains.mean_first_passage_time
 ```

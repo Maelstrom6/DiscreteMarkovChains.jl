@@ -240,7 +240,7 @@ end
     # Empty test
     T = Array{Any}(undef, 0, 0)
     X = DiscreteMarkovChain([], T)
-    @test expected_time_to_absorption(X) == Any[]
+    @test mean_time_to_absorption(X) == Any[]
 
     T = [
         1 0 0 0 0;
@@ -250,7 +250,7 @@ end
         0 0 0 0 1;
     ]
     X = DiscreteMarkovChain([0, 1, 2, 3, 4], T)
-    @test expected_time_to_absorption(X) == [2, 3, 2]
+    @test mean_time_to_absorption(X) == [2, 3, 2]
 
     T = [
         1 0 0 0 0;
@@ -260,7 +260,7 @@ end
         1//2 0 0 1//2 0;
     ]
     X = DiscreteMarkovChain([0, 1, 2, 3, 4], T)
-    @test expected_time_to_absorption(X) == [12//5, 7//5, 6//5]
+    @test mean_time_to_absorption(X) == [12//5, 7//5, 6//5]
 end
 
 @testset "Exit Probability" begin
@@ -331,6 +331,14 @@ end
     T = Array{Any}(undef, 0, 0)
     X = DiscreteMarkovChain([], T)
     @test mean_recurrence_time(X) == Any[]
+
+    T = [
+        0 1 0;
+        0 0 1;
+        1 0 0;
+    ]
+    X = DiscreteMarkovChain(T)
+    @test mean_recurrence_time(X) ≈ [3, 3, 3]
 
     T = [
         0 1 0 0 0;
