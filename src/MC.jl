@@ -515,12 +515,41 @@ function is_absorbing(x::AbstractMarkovChain)
     return (r > 0) && (LinearAlgebra.diag(A) ≈ repeat([required_row_sum(typeof(x))], r))
 end
 
+"""
+    is_reversible(x)
+
+# Definitions
+A Markov chain is said to be reversible if it satisfies the equation
+``π_i p_{ij} = π_j p_{ji}`` where ``π`` is the stationary distribution
+and ``p`` are the elements of the transition matrix of the Markov chain.
+
+# Arguments
+- `x`: some kind of Markov chain.
+
+# Returns
+`true` if the Markov chain is reversible.
+"""
 function is_reversible(x::AbstractMarkovChain)
     T = transition_matrix(x)
+    n  = size(T)[1]
     l = stationary_distribution(x)
-    L = repeat([l], size(T)[1])'
+    L = repeat([l], n)'
 
-    return L.*T ≈ L.*T'
+    for i in 2:n
+        for j in 1:(i-1)
+            if !(l[i]*T[i, j] ≈ l[j]*T[j, i])
+                display(i)
+                println()
+                display(j)
+                println()
+                display(l)
+                println()
+                return false
+            end
+        end
+    end
+
+    return true
 end
 
 """

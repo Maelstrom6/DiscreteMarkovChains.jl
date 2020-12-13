@@ -217,6 +217,36 @@ end
     @test !is_absorbing(X)
 end
 
+@testset "Reversible" begin
+    # Empty test
+    T = Array{Any}(undef, 0, 0)
+    X = DiscreteMarkovChain(T)
+    @test is_reversible(X)
+    X = ContinuousMarkovChain(T)
+    @test is_reversible(X)
+
+    T = [
+        .425 .000 .075 .500;
+        .000 .550 .250 .200;
+        .300 .250 .450 .000;
+        .500 .050 .000 .450;
+    ]
+    X = DiscreteMarkovChain(T)
+    @test is_reversible(X)
+    X = ContinuousMarkovChain(T-I)
+    @test is_reversible(X)
+
+    T = [
+        0.5 0.5 0.0;
+        0.0 0.2 0.8;
+        0.3 0.3 0.4;
+    ]
+    X = DiscreteMarkovChain(T)
+    @test !is_reversible(X)
+    X = ContinuousMarkovChain(T-I)
+    @test !is_reversible(X)
+end
+
 @testset "Stationary distribution" begin
     # Empty test
     T = Array{Any}(undef, 0, 0)

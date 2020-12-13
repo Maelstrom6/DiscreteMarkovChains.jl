@@ -20,4 +20,5 @@ Pages = ["simple.md"]
 DiscreteMarkovChains.is_regular
 DiscreteMarkovChains.is_ergodic
 DiscreteMarkovChains.is_absorbing
+DiscreteMarkovChains.is_reversible
 ```
