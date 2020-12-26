@@ -10,7 +10,10 @@ function check(state_space, transition_matrix, type)
     if length(unique(state_space)) != length(state_space)
         error("The state space, $(state_space), must have unique elements.")
     end
-    if !is_row_stochastic(transition_matrix, required_row_sum(type))
+    if !is_row_stochastic(
+        transition_matrix,
+        required_row_sum(type, eltype(transition_matrix))
+    )
         error(
             "The transition matrix, $(transition_matrix), should be row-stochastic "*
             "(each row must sum up to $(required_row_sum(type)))."
@@ -118,7 +121,7 @@ iff the transition matrix at ``(i,j)`` is nonzero.
 function digraph(x::AbstractMarkovChain)
     T = transition_matrix(x)
     V = 1:(size(T)[1])
-    return [(i, j) for i in V for j in V if T[i, j] != 0]
+    return [(i, j) for i in V for j in V if T[i, j] != zero(eltype(T))]
 end
 
 """
@@ -138,14 +141,30 @@ This definition is extened so that all its rows sum to `row_sum`.
 # Returns
 `true` if the given matrix, `mat`, is row-stochasitc.
 """
-function is_row_stochastic(mat, row_sum=1)
+function is_row_stochastic(mat, row_sum=one(eltype(mat)))
     n, p = size(mat)
     if n == 0
         return true
     end
+
     # We only want to throw when we are sure it is incorrect.
     # Float16 seemed like a good compromise.
-    isapprox(repeat([row_sum], n), mat*ones(p), atol=eps(Float16))
+    lhs = repeat([row_sum], n)
+    rhs = mat*repeat([one(eltype(mat))], p)
+
+    for i in 1:p
+        if !isapprox(lhs[i], rhs[i], atol=eps(Float16), rtol=eps(Float16))
+            return false
+        end
+    end
+    return true
+end
+
+Base.one(::Type{Array{T,2}}) where T = LinearAlgebra.I
+Base.one(::Type{LinearAlgebra.Adjoint{T,Array{T,2}}}) where T = LinearAlgebra.I
+Base.zero(::Type{Array{T,2}}) where T = LinearAlgebra.UniformScaling(0)
+function Base.zero(::Type{LinearAlgebra.Adjoint{T,Array{T,2}}}) where T
+    return LinearAlgebra.UniformScaling(0)
 end
 
 """
@@ -229,7 +248,10 @@ function communication_classes(x::AbstractMarkovChain)
 
     for class in classes
         submatrix = T[class, class]
-        push!(recurrence, is_row_stochastic(submatrix, required_row_sum(typeof(x))))
+        push!(recurrence, is_row_stochastic(
+            submatrix,
+            required_row_sum(typeof(x), eltype(submatrix))
+        ))
     end
 
     classes = [[S[i] for i in class] for class in classes]
@@ -512,7 +534,8 @@ false
 function is_absorbing(x::AbstractMarkovChain)
     states, A, B, C = decompose(x)
     r = size(A)[1]
-    return (r > 0) && (LinearAlgebra.diag(A) ≈ repeat([required_row_sum(typeof(x))], r))
+    return (r > 0) &&
+    (LinearAlgebra.diag(A) ≈ repeat([required_row_sum(typeof(x), eltype(A))], r))
 end
 
 """
@@ -630,9 +653,16 @@ function stationary_distribution(x::AbstractMarkovChain)
     end
 
     a = (T - characteristic_matrix(x))'
-    a[1, :] = ones(n)
-    b = zeros(Int, n)
-    b[1] = 1
+    if eltype(T) <: Array{T,2} where T
+        a[1, :] = repeat([Matrix(one(eltype(T)), size(T)...)], n)
+        b = repeat([Matrix(zero(eltype(T)), size(T)...)], n)
+        b[1] = Matrix(one(eltype(T)), size(T)...)
+    else
+        a[1, :] = repeat([one(eltype(T))], n)
+        b = repeat([zero(eltype(T))], n)
+        b[1] = one(eltype(T))
+    end
+
     try
         return a\b
     catch e

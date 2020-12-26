@@ -55,6 +55,7 @@ struct ContinuousMarkovChain <: AbstractContinuousMarkovChain
 end
 
 required_row_sum(::Core.Type{<:AbstractContinuousMarkovChain}) = 0
+required_row_sum(::Type{<:AbstractContinuousMarkovChain}, ::Type{T}) where T = zero(T)
 function ContinuousMarkovChain(transition_matrix)
     return ContinuousMarkovChain(1:(size(transition_matrix)[1]), transition_matrix)
 end

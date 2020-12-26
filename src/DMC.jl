@@ -59,7 +59,8 @@ end
 # Returns
 The number that each row in the transition matrix should sum up to.
 """
-required_row_sum(::Core.Type{<:AbstractDiscreteMarkovChain}) = 1
+required_row_sum(::Type{<:AbstractDiscreteMarkovChain}) = 1
+required_row_sum(::Type{<:AbstractDiscreteMarkovChain}, ::Type{T}) where T = one(T)
 function DiscreteMarkovChain(transition_matrix)
     return DiscreteMarkovChain(1:(size(transition_matrix)[1]), transition_matrix)
 end
