@@ -7,13 +7,17 @@ function check(state_space, transition_matrix, type)
             "transition matrix should be the same size."
         )
     end
+
     if length(unique(state_space)) != length(state_space)
         error("The state space, $(state_space), must have unique elements.")
     end
-    if !is_row_stochastic(
-        transition_matrix,
-        required_row_sum(type, eltype(transition_matrix))
-    )
+
+    rrs = required_row_sum(type)
+    try
+        rrs = required_row_sum(type, eltype(transition_matrix))
+    catch e
+    end
+    if !is_row_stochastic(transition_matrix, rrs)
         error(
             "The transition matrix, $(transition_matrix), should be row-stochastic "*
             "(each row must sum up to $(required_row_sum(type)))."
@@ -561,12 +565,6 @@ function is_reversible(x::AbstractMarkovChain)
     for i in 2:n
         for j in 1:(i-1)
             if !(l[i]*T[i, j] ≈ l[j]*T[j, i])
-                display(i)
-                println()
-                display(j)
-                println()
-                display(l)
-                println()
                 return false
             end
         end

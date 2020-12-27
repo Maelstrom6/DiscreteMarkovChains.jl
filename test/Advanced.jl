@@ -31,6 +31,9 @@ using LinearAlgebra
     function Base.isapprox(x::MyType, y::MyType; atol, rtol)
         return isapprox(value(x), value(y), atol=atol, rtol=rtol)
     end
+    function Base.isapprox(x::MyType, y::MyType)
+        return isapprox(value(x), value(y))
+    end
     function Base.rtoldefault(::Type{MyType}, ::Type{MyType}, z)
         return Base.rtoldefault(Float16, Float16, z)
     end
@@ -53,7 +56,11 @@ using LinearAlgebra
 
     @test communication_classes(X) == ([[1, 2]], Any[true])
     @test is_ergodic(X)
-    @test stationary_distribution(X) ≈ [MyType(2/7), MyType(5/7)]
+    s = stationary_distribution(X)
+    for (i, v) in enumerate(s)
+        @test v ≈ [MyType(2/7), MyType(5/7)][i]
+    end
+    #@test stationary_distribution(X) ≈ [MyType(2/7), MyType(5/7)]
 
     T = first.([
         ([1 0; 0 1],) ([0 0; 0 0],);
@@ -62,8 +69,8 @@ using LinearAlgebra
 
     X = DiscreteMarkovChain(T)
 
-    # @test communication_classes(X) == ([[1], [2]], Any[true, true])
-    # @test !is_ergodic(X)
+    @test communication_classes(X) == ([[1], [2]], Any[true, true])
+    @test !is_ergodic(X)
     # @test stationary_distribution(X) == T
 
 end
