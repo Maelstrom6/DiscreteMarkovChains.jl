@@ -66,7 +66,7 @@ end
 
 probability_matrix(x::AbstractContinuousMarkovChain) = exp(transition_matrix(x))
 
-convert(
+Base.convert(
     ::Type{ContinuousMarkovChain},
     x::AbstractDiscreteMarkovChain,
 ) = ContinuousMarkovChain(x)
@@ -82,7 +82,7 @@ function ContinuousMarkovChain(x::AbstractDiscreteMarkovChain)
     return ContinuousMarkovChain(S, Q)
 end
 
-convert(
+Base.convert(
     ::Type{DiscreteMarkovChain},
     x::AbstractContinuousMarkovChain,
 ) = DiscreteMarkovChain(x)

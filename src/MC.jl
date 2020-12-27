@@ -651,15 +651,10 @@ function stationary_distribution(x::AbstractMarkovChain)
     end
 
     a = (T - characteristic_matrix(x))'
-    if eltype(T) <: Array{T,2} where T
-        a[1, :] = repeat([Matrix(one(eltype(T)), size(T)...)], n)
-        b = repeat([Matrix(zero(eltype(T)), size(T)...)], n)
-        b[1] = Matrix(one(eltype(T)), size(T)...)
-    else
-        a[1, :] = repeat([one(eltype(T))], n)
-        b = repeat([zero(eltype(T))], n)
-        b[1] = one(eltype(T))
-    end
+
+    a[1, :] = repeat([one(eltype(T))], n)
+    b = repeat([zero(eltype(T))], n)
+    b[1] = one(eltype(T))
 
     try
         return a\b

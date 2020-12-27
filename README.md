@@ -8,7 +8,7 @@
 
 DiscreteMarkovChains is a package that supports various functions relating to discrete Markov chains. In particular, it deals with discrete-time discrete-space time-homogenous finite Markov chains.
 
-A 100% pure-Julia stack library for functions and queries related to discrete Markov chains.
+This library also deals with continuous Markov chains. Any function in the documentation that takes "some kind of Markov chain" as an argument can be a `DiscreteMarkovChain` or a `ContinuousMarkovChain`. Sadly there are very few examples for continuous Markov chains but they operate in the same way as discrete Markov chains.
 
 ## Installation
 
@@ -21,6 +21,8 @@ Simply type `] add DiscreteMarkovChains` into the Julia REPL.
 See [the documentation](https://Maelstrom6.github.io/DiscreteMarkovChains.jl/dev) hosted on GitHub Pages.
 
 ## Usage
+
+### Discrete Time
 
 We want to find out if this chain is an absorbing chain.
 
@@ -66,6 +68,53 @@ mean_recurrence_time(chain)
 ```
 
 So the first and third states take an average of 4 time steps to return to itself. The second state takes an average of 2 steps to return to itself.
+
+### Continuous Time
+
+There is support for continuous Markov chains as well.
+
+```julia
+generator = [
+    -3 1 2;
+    0 -1 1;
+    1 1 -2;
+]
+chain = ContinuousMarkovChain(generator)
+
+communication_classes(chain)
+
+# output
+
+([[1, 2, 3]], Any[true])
+```
+
+So we have one communication class that is recurrent.
+
+Calculate the stationary distribution of the chain.
+
+```julia
+stationary_distribution(chain)
+
+# output
+
+3-element Array{Float64,1}:
+ 0.125
+ 0.5
+ 0.375
+```
+
+Calculate the mean first passage time of the chain.
+
+```julia
+round.(mean_first_passage_time(chain), digits=2)
+
+# output
+
+3×3 Array{Float64,2}:
+ 0.0  1.0  0.67
+ 3.0  0.0  1.0
+ 2.0  1.0  0.0
+```
 
 ## Authors
 
