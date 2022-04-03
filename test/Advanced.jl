@@ -21,6 +21,10 @@ using LinearAlgebra
     Base.:*(x::MyType, y) = MyType(value(x)*y)
     Base.:-(x::MyType, y) = MyType(value(x)-y)
     Base.:/(x::MyType, y) = MyType(value(x)/y)
+    Base.:+(x, y::MyType) = MyType(x+value(y))
+    Base.:*(x, y::MyType) = MyType(x*value(y))
+    Base.:-(x, y::MyType) = MyType(x-value(y))
+    Base.:/(x, y::MyType) = MyType(x/value(y))
 
     Base.adjoint(x::MyType) = MyType(adjoint(value(x)))
     Base.abs(x::MyType) = MyType(abs(value(x)))

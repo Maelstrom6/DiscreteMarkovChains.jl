@@ -1,7 +1,7 @@
 name = "DiscreteMarkovChains"
 uuid = "8abcb7ef-b365-4f7b-ac38-56893fb62f9f"
 authors = ["Chris du Plessis"]
-version = "0.2.0"
+version = "0.2.1"
 
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
